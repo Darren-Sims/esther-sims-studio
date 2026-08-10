@@ -1,5 +1,4 @@
-<script>
-  document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", function () {
   const filterButtons = document.querySelectorAll("[data-filter]");
   const projectItems = document.querySelectorAll("[data-category]");
   const filterToggle = document.querySelector("#filter-toggle");
@@ -191,4 +190,3 @@
   updateToggleLabel();
   updateClearButtonVisibility();
 });
-</script>
