@@ -1,15 +1,17 @@
 """
 Database layer for the Esther Sims Studio admin tool.
 
-Uses plain sqlite3 (Python stdlib) so the app has zero heavyweight
-dependencies. One connection per request, opened via Flask's `g` object.
+Connects to Postgres (Neon, Render Postgres, or any standard Postgres) via
+the DATABASE_URL environment variable. Wraps psycopg2 in a thin shim so the
+rest of the app can keep using sqlite3-style `conn.execute(sql, params)`
+calls that return a fetchable cursor.
 """
 
-import sqlite3
 import os
 from datetime import datetime, date
 
-DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "instance", "esther_studio.db")
+import psycopg2
+import psycopg2.extras
 
 COMMISSION_STATUSES = [
     "Enquiry",
@@ -154,7 +156,7 @@ DEFAULT_EMAIL_TEMPLATES = [
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     email TEXT UNIQUE NOT NULL,
     name TEXT NOT NULL,
     password_hash TEXT NOT NULL,
@@ -162,7 +164,7 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 CREATE TABLE IF NOT EXISTS clients (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     name TEXT NOT NULL,
     email TEXT,
     phone TEXT,
@@ -172,7 +174,7 @@ CREATE TABLE IF NOT EXISTS clients (
 );
 
 CREATE TABLE IF NOT EXISTS commissions (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     client_id INTEGER NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
     type TEXT NOT NULL,
     size TEXT,
@@ -190,7 +192,7 @@ CREATE TABLE IF NOT EXISTS commissions (
 );
 
 CREATE TABLE IF NOT EXISTS invoices (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     commission_id INTEGER NOT NULL REFERENCES commissions(id) ON DELETE CASCADE,
     invoice_number TEXT UNIQUE NOT NULL,
     kind TEXT NOT NULL,
@@ -203,7 +205,7 @@ CREATE TABLE IF NOT EXISTS invoices (
 );
 
 CREATE TABLE IF NOT EXISTS email_templates (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     key TEXT UNIQUE NOT NULL,
     name TEXT NOT NULL,
     subject TEXT NOT NULL,
@@ -218,12 +220,43 @@ CREATE TABLE IF NOT EXISTS settings (
 """
 
 
+class _PGConnection:
+    """Shim so the rest of the app can keep calling sqlite3-style
+    conn.execute(sql, params) and get back a fetchable cursor, instead of
+    every call site needing conn.cursor() + cur.execute() separately.
+    Translates '?' placeholders to psycopg2's '%s' — safe here because no
+    SQL string or value in this app contains a literal '?' character.
+    """
+
+    def __init__(self, pg_conn):
+        self._conn = pg_conn
+
+    def execute(self, sql, params=()):
+        cur = self._conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute(sql.replace("?", "%s"), params)
+        return cur
+
+    def executescript(self, sql):
+        cur = self._conn.cursor()
+        cur.execute(sql)
+        self._conn.commit()
+
+    def commit(self):
+        self._conn.commit()
+
+    def close(self):
+        self._conn.close()
+
+
 def get_connection():
-    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA foreign_keys = ON")
-    return conn
+    database_url = os.environ.get("DATABASE_URL")
+    if not database_url:
+        raise RuntimeError(
+            "DATABASE_URL is not set. Point it at your Postgres database "
+            "(e.g. the connection string from Neon)."
+        )
+    pg_conn = psycopg2.connect(database_url)
+    return _PGConnection(pg_conn)
 
 
 def init_db():
@@ -233,13 +266,13 @@ def init_db():
 
     for k, v in DEFAULT_SETTINGS.items():
         conn.execute(
-            "INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)", (k, v)
+            "INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT (key) DO NOTHING", (k, v)
         )
 
     for tpl in DEFAULT_EMAIL_TEMPLATES:
         conn.execute(
-            """INSERT OR IGNORE INTO email_templates (key, name, subject, body, updated_at)
-               VALUES (?, ?, ?, ?, ?)""",
+            """INSERT INTO email_templates (key, name, subject, body, updated_at)
+               VALUES (?, ?, ?, ?, ?) ON CONFLICT (key) DO NOTHING""",
             (tpl["key"], tpl["name"], tpl["subject"], tpl["body"], now),
         )
 

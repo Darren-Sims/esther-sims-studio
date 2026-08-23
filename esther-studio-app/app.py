@@ -2,7 +2,7 @@
 Esther Sims Studio — commission, invoicing & client-communication admin tool.
 
 A small single-tenant Flask app: no signup flow beyond a one-time first-run
-setup, session-based login, SQLite storage, ReportLab-generated PDF invoices,
+setup, session-based login, Postgres storage, ReportLab-generated PDF invoices,
 and a library of editable email templates with merge-field substitution.
 """
 
@@ -12,6 +12,7 @@ import secrets
 from datetime import datetime, date, timedelta
 from functools import wraps
 
+from dotenv import load_dotenv
 from flask import (
     Flask, g, render_template, request, redirect, url_for, session,
     flash, send_file, abort
@@ -20,6 +21,8 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 import db
 from pdf import build_invoice_pdf
+
+load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", secrets.token_hex(32))
@@ -146,12 +149,7 @@ def setup():
         else:
             conn.execute(
                 "INSERT INTO users (email, name, password_hash, created_at) VALUES (?, ?, ?, ?)",
-                (
-                    email,
-                    name,
-                    generate_password_hash(password, method="pbkdf2:sha256"),
-                    datetime.utcnow().isoformat(),
-                ),
+                (email, name, generate_password_hash(password, method="pbkdf2:sha256"), datetime.utcnow().isoformat()),
             )
             conn.commit()
             flash("Account created — welcome!", "success")
@@ -248,8 +246,8 @@ def clients_list():
 def client_new():
     if request.method == "POST":
         conn = get_db()
-        conn.execute(
-            "INSERT INTO clients (name, email, phone, address, notes, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+        cur = conn.execute(
+            "INSERT INTO clients (name, email, phone, address, notes, created_at) VALUES (?, ?, ?, ?, ?, ?) RETURNING id",
             (
                 request.form.get("name", "").strip(),
                 request.form.get("email", "").strip(),
@@ -259,8 +257,8 @@ def client_new():
                 datetime.utcnow().isoformat(),
             ),
         )
+        client_id = cur.fetchone()["id"]
         conn.commit()
-        client_id = conn.execute("SELECT last_insert_rowid() AS id").fetchone()["id"]
         flash("Client added.", "success")
         return redirect(url_for("client_detail", client_id=client_id))
     return render_template("client_form.html", client=None)
@@ -337,8 +335,8 @@ def commission_new():
     if request.method == "POST":
         client_id = request.form.get("client_id")
         if request.form.get("new_client_name"):
-            conn.execute(
-                "INSERT INTO clients (name, email, phone, address, notes, created_at) VALUES (?, ?, ?, ?, '', ?)",
+            cur = conn.execute(
+                "INSERT INTO clients (name, email, phone, address, notes, created_at) VALUES (?, ?, ?, ?, '', ?) RETURNING id",
                 (
                     request.form.get("new_client_name", "").strip(),
                     request.form.get("new_client_email", "").strip(),
@@ -347,16 +345,16 @@ def commission_new():
                     datetime.utcnow().isoformat(),
                 ),
             )
-            client_id = conn.execute("SELECT last_insert_rowid() AS id").fetchone()["id"]
+            client_id = cur.fetchone()["id"]
 
         now = datetime.utcnow().isoformat()
         price_pence = parse_money_to_pence(request.form.get("price"))
         deposit_pence = parse_money_to_pence(request.form.get("deposit"))
-        conn.execute(
+        cur = conn.execute(
             """INSERT INTO commissions
                (client_id, type, size, description, price_pence, deposit_pence, status,
                 deadline, reference_notes, internal_notes, created_at, updated_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id""",
             (
                 client_id,
                 request.form.get("type"),
@@ -371,8 +369,8 @@ def commission_new():
                 now, now,
             ),
         )
+        commission_id = cur.fetchone()["id"]
         conn.commit()
-        commission_id = conn.execute("SELECT last_insert_rowid() AS id").fetchone()["id"]
         flash("Commission created.", "success")
         return redirect(url_for("commission_detail", commission_id=commission_id))
 

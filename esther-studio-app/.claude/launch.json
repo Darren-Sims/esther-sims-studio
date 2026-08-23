@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "esther-studio-app",
+      "runtimeExecutable": "/Users/darren/Library/Mobile Documents/com~apple~CloudDocs/Work/Clients/Esther Sims Studio/esther-sims-studio/esther-studio-app/.venv/bin/python",
+      "runtimeArgs": ["app.py"],
+      "port": 5000,
+      "autoPort": true
+    }
+  ]
+}
