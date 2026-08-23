@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Invoices{% endblock %}
+{% block content %}
+<div class="page-header"><h1>Invoices</h1></div>
+
+<div class="card">
+  {% if invoices %}
+    <table class="list">
+      <thead><tr><th>Invoice</th><th>Client</th><th>Commission</th><th>Amount</th><th>Status</th><th>Issued</th></tr></thead>
+      <tbody>
+      {% for i in invoices %}
+        <tr onclick="window.location='{{ url_for('invoice_detail', invoice_id=i.id) }}'" style="cursor:pointer;">
+          <td>{{ i.invoice_number }}</td>
+          <td>{{ i.client_name }}</td>
+          <td>{{ i.commission_type }} · {{ i.kind }}</td>
+          <td>{{ i.amount_pence|money }}</td>
+          <td><span class="badge {{ 'badge-warm' if i.status == 'Overdue' else ('badge-neutral' if i.status == 'Paid' else '') }}">{{ i.status }}</span></td>
+          <td>{{ i.issued_date|prettydate }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="empty-state">No invoices yet. Create one from a commission's page.</p>
+  {% endif %}
+</div>
+{% endblock %}

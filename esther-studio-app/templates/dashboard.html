@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Welcome back{% if current_user %}, {{ current_user.name.split(' ')[0] }}{% endif %}</h1>
+    <p class="subtitle">Here's what's on for {{ settings.business_name }}.</p>
+  </div>
+  <a href="{{ url_for('commission_new') }}" class="btn btn-primary">+ New commission</a>
+</div>
+
+<div class="grid grid-3" style="margin-bottom: 26px;">
+  <div class="stat-card">
+    <div class="stat-value">{{ active_count }}</div>
+    <div class="stat-label">Active commissions</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">{{ upcoming|length }}</div>
+    <div class="stat-label">Upcoming deadlines</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">{{ outstanding_invoices|length }}</div>
+    <div class="stat-label">Outstanding invoices</div>
+  </div>
+</div>
+
+<div class="grid grid-2">
+  <div class="card">
+    <h2>Upcoming deadlines</h2>
+    {% if upcoming %}
+      <table class="list">
+        <thead><tr><th>Commission</th><th>Client</th><th>Deadline</th></tr></thead>
+        <tbody>
+        {% for c in upcoming[:8] %}
+          <tr>
+            <td><a href="{{ url_for('commission_detail', commission_id=c.id) }}">{{ c.type }}</a></td>
+            <td>{{ c.client_name }}</td>
+            <td>
+              {% set d = c.deadline|days_until %}
+              <span class="{{ 'deadline-soon' if d is not none and d <= 7 else 'deadline-ok' }}">
+                {{ c.deadline|prettydate }}
+                {% if d is not none %}
+                  {% if d < 0 %}(overdue){% elif d == 0 %}(today){% else %}({{ d }}d){% endif %}
+                {% endif %}
+              </span>
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="empty-state">No upcoming deadlines. Nice and clear.</p>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <h2>Outstanding invoices</h2>
+    {% if outstanding_invoices %}
+      <table class="list">
+        <thead><tr><th>Invoice</th><th>Client</th><th>Amount</th><th>Status</th></tr></thead>
+        <tbody>
+        {% for i in outstanding_invoices[:8] %}
+          <tr>
+            <td><a href="{{ url_for('invoice_detail', invoice_id=i.id) }}">{{ i.invoice_number }}</a></td>
+            <td>{{ i.client_name }}</td>
+            <td>{{ i.amount_pence|money }}</td>
+            <td><span class="badge {{ 'badge-warm' if i.status == 'Overdue' else 'badge-neutral' }}">{{ i.status }}</span></td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="empty-state">Nothing outstanding right now.</p>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card" style="margin-top:20px;">
+  <h2>Commission pipeline</h2>
+  <div style="display:flex; flex-wrap:wrap; gap:10px;">
+    {% for row in status_counts %}
+      <span class="badge {{ 'badge-neutral' if row.status in ('Completed','Cancelled') else '' }}">{{ row.status }} · {{ row.n }}</span>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

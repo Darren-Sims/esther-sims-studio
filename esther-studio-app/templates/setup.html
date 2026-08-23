@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Set up — Studio Admin</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <img src="https://cdn.prod.website-files.com/63ee391d6609d63fbc92b869/640f16c3a90a2d4d45e15ad9_nav-logo.svg" alt="Esther Sims Studio">
+      <h1>Welcome</h1>
+      <p class="tag">Let's set up your login for the studio admin tool. This only happens once.</p>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="flash flash-{{ category }}">{{ message }}</div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <form method="post">
+        <div class="field">
+          <label for="name">Your name</label>
+          <input type="text" id="name" name="name" required>
+        </div>
+        <div class="field">
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" required>
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" required minlength="8">
+        </div>
+        <div class="field">
+          <label for="confirm">Confirm password</label>
+          <input type="password" id="confirm" name="confirm" required minlength="8">
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center;">Create account</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}{{ commission.type }} — {{ client.name }}{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>{{ commission.type }}</h1>
+    <p class="subtitle">for <a href="{{ url_for('client_detail', client_id=client.id) }}">{{ client.name }}</a></p>
+  </div>
+  <div style="display:flex; gap:8px;">
+    <a href="{{ url_for('commission_edit', commission_id=commission.id) }}" class="btn btn-secondary">Edit</a>
+    <a href="{{ url_for('invoice_new', commission_id=commission.id) }}" class="btn btn-primary">+ New invoice</a>
+  </div>
+</div>
+
+<div class="grid grid-2">
+  <div class="card">
+    <h2>Details</h2>
+    <table class="list">
+      <tr><td class="muted">Status</td><td>
+        <form method="post" action="{{ url_for('commission_status', commission_id=commission.id) }}" style="display:flex; gap:8px; align-items:center;">
+          <select name="status" onchange="this.form.submit()">
+            {% for s in commission_statuses %}
+              <option value="{{ s }}" {{ 'selected' if commission.status == s }}>{{ s }}</option>
+            {% endfor %}
+          </select>
+        </form>
+      </td></tr>
+      <tr><td class="muted">Size</td><td>{{ commission.size or '—' }}</td></tr>
+      <tr><td class="muted">Price</td><td>{{ commission.price_pence|money }}</td></tr>
+      <tr><td class="muted">Deposit</td><td>{{ commission.deposit_pence|money }} {% if commission.deposit_paid_date %}<span class="badge">paid {{ commission.deposit_paid_date|prettydate }}</span>{% endif %}</td></tr>
+      <tr><td class="muted">Balance</td><td>{{ (commission.price_pence - commission.deposit_pence)|money }} {% if commission.balance_paid_date %}<span class="badge">paid {{ commission.balance_paid_date|prettydate }}</span>{% endif %}</td></tr>
+      <tr><td class="muted">Deadline</td><td>{{ commission.deadline|prettydate if commission.deadline else '—' }}</td></tr>
+    </table>
+    {% if commission.description %}<p style="margin-top:14px;"><strong>Description</strong><br>{{ commission.description }}</p>{% endif %}
+    {% if commission.reference_notes %}<p><strong>Reference notes</strong><br>{{ commission.reference_notes }}</p>{% endif %}
+    {% if commission.internal_notes %}<p><strong>Internal notes</strong><br>{{ commission.internal_notes }}</p>{% endif %}
+
+    <form method="post" action="{{ url_for('commission_delete', commission_id=commission.id) }}" onsubmit="return confirmDelete('Delete this commission and its invoices?');" style="margin-top:16px;">
+      <button type="submit" class="btn btn-danger btn-sm">Delete commission</button>
+    </form>
+  </div>
+
+  <div>
+    <div class="card">
+      <h2>Invoices</h2>
+      {% if invoices %}
+        <table class="list">
+          <thead><tr><th>#</th><th>Kind</th><th>Amount</th><th>Status</th></tr></thead>
+          <tbody>
+          {% for i in invoices %}
+            <tr onclick="window.location='{{ url_for('invoice_detail', invoice_id=i.id) }}'" style="cursor:pointer;">
+              <td>{{ i.invoice_number }}</td>
+              <td>{{ i.kind }}</td>
+              <td>{{ i.amount_pence|money }}</td>
+              <td><span class="badge">{{ i.status }}</span></td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p class="empty-state">No invoices yet.</p>
+      {% endif %}
+    </div>
+
+    <div class="card">
+      <h2>Email templates</h2>
+      <p class="muted" style="margin-top:-6px; margin-bottom:14px; font-size:0.85rem;">Pick a stage and I'll fill in {{ client.name.split(' ')[0] }}'s details for you to copy.</p>
+      {% for t in templates %}
+        <div class="template-list-item">
+          <span>{{ t.name }}</span>
+          <a href="{{ url_for('email_compose', commission_id=commission.id, key=t.key) }}" class="btn btn-secondary btn-sm">Use template</a>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Clients{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Clients</h1>
+    <p class="subtitle">Everyone who's commissioned a piece, or enquired about one.</p>
+  </div>
+  <a href="{{ url_for('client_new') }}" class="btn btn-primary">+ New client</a>
+</div>
+
+<div class="card" style="margin-bottom:16px;">
+  <form method="get" style="display:flex; gap:10px;">
+    <input type="text" name="q" placeholder="Search by name or email" value="{{ q }}" style="max-width:320px;">
+    <button type="submit" class="btn btn-secondary">Search</button>
+  </form>
+</div>
+
+<div class="card">
+  {% if clients %}
+    <table class="list">
+      <thead><tr><th>Name</th><th>Email</th><th>Phone</th></tr></thead>
+      <tbody>
+      {% for c in clients %}
+        <tr onclick="window.location='{{ url_for('client_detail', client_id=c.id) }}'" style="cursor:pointer;">
+          <td>{{ c.name }}</td>
+          <td>{{ c.email or '—' }}</td>
+          <td>{{ c.phone or '—' }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="empty-state">No clients yet.</p>
+  {% endif %}
+</div>
+{% endblock %}

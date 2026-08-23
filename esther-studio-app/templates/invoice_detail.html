@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}{{ invoice.invoice_number }}{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>{{ invoice.invoice_number }}</h1>
+    <p class="subtitle">{{ commission.type }} for {{ client.name }} · {{ invoice.kind }}</p>
+  </div>
+  <div style="display:flex; gap:8px;">
+    <a href="{{ url_for('invoice_pdf', invoice_id=invoice.id) }}" class="btn btn-secondary">Download PDF</a>
+  </div>
+</div>
+
+<div class="card" style="max-width:520px;">
+  <table class="list">
+    <tr><td class="muted">Amount</td><td>{{ invoice.amount_pence|money }}</td></tr>
+    <tr><td class="muted">Status</td><td><span class="badge">{{ invoice.status }}</span></td></tr>
+    <tr><td class="muted">Issued</td><td>{{ invoice.issued_date|prettydate }}</td></tr>
+    <tr><td class="muted">Due</td><td>{{ invoice.due_date|prettydate if invoice.due_date else '—' }}</td></tr>
+    {% if invoice.paid_date %}<tr><td class="muted">Paid</td><td>{{ invoice.paid_date|prettydate }}</td></tr>{% endif %}
+  </table>
+
+  <div style="margin-top:18px; display:flex; gap:8px; flex-wrap:wrap;">
+    {% for s in ['Draft', 'Sent', 'Paid', 'Overdue', 'Cancelled'] %}
+      {% if s != invoice.status %}
+        <form method="post" action="{{ url_for('invoice_status', invoice_id=invoice.id) }}">
+          <input type="hidden" name="status" value="{{ s }}">
+          <button type="submit" class="btn btn-secondary btn-sm">Mark {{ s }}</button>
+        </form>
+      {% endif %}
+    {% endfor %}
+  </div>
+</div>
+
+<a href="{{ url_for('commission_detail', commission_id=commission.id) }}">&larr; Back to commission</a>
+{% endblock %}

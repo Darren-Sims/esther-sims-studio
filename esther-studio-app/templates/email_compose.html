@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}{{ tpl.name }}{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>{{ tpl.name }}</h1>
+    <p class="subtitle">for {{ client.name }} — {{ commission.type }}</p>
+  </div>
+</div>
+
+<div class="card" style="max-width:640px;">
+  <div class="field">
+    <label>Subject</label>
+    <div id="subject-box" class="copy-box" style="white-space:normal;">{{ subject }}</div>
+    <button type="button" class="btn btn-secondary btn-sm" style="margin-top:8px;" onclick="copyText('subject-box', this)">Copy subject</button>
+  </div>
+
+  <div class="field" style="margin-top:20px;">
+    <label>Body</label>
+    <div id="body-box" class="copy-box">{{ body }}</div>
+    <button type="button" class="btn btn-primary btn-sm" style="margin-top:8px;" onclick="copyText('body-box', this)">Copy body</button>
+  </div>
+</div>
+
+<a href="{{ url_for('commission_detail', commission_id=commission.id) }}">&larr; Back to commission</a>
+{% endblock %}

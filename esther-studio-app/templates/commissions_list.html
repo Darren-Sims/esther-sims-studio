@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Commissions{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Commissions</h1>
+    <p class="subtitle">Every commission, tracked from enquiry to delivery.</p>
+  </div>
+  <a href="{{ url_for('commission_new') }}" class="btn btn-primary">+ New commission</a>
+</div>
+
+<div class="tabs">
+  <a href="{{ url_for('commissions_list') }}" class="{{ 'active' if not status }}">All</a>
+  {% for s in commission_statuses %}
+    <a href="{{ url_for('commissions_list', status=s) }}" class="{{ 'active' if status == s }}">{{ s }}</a>
+  {% endfor %}
+</div>
+
+<div class="card">
+  {% if commissions %}
+    <table class="list">
+      <thead>
+        <tr><th>Client</th><th>Type</th><th>Price</th><th>Status</th><th>Deadline</th></tr>
+      </thead>
+      <tbody>
+      {% for c in commissions %}
+        <tr onclick="window.location='{{ url_for('commission_detail', commission_id=c.id) }}'" style="cursor:pointer;">
+          <td>{{ c.client_name }}</td>
+          <td>{{ c.type }}{% if c.size %} <span class="muted">· {{ c.size }}</span>{% endif %}</td>
+          <td>{{ c.price_pence|money }}</td>
+          <td><span class="badge">{{ c.status }}</span></td>
+          <td>
+            {% if c.deadline %}
+              {% set d = c.deadline|days_until %}
+              <span class="{{ 'deadline-soon' if d is not none and d <= 7 and c.status not in ('Completed','Cancelled') else '' }}">{{ c.deadline|prettydate }}</span>
+            {% else %}
+              <span class="muted">—</span>
+            {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="empty-state">No commissions here yet.</p>
+  {% endif %}
+</div>
+{% endblock %}

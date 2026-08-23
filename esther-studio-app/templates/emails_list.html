@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Email templates{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Email templates</h1>
+    <p class="subtitle">Edit the wording once — it'll be used everywhere you send this stage of email. Open a commission to fill one in and copy it.</p>
+  </div>
+</div>
+
+<div class="card">
+  {% for t in templates %}
+    <div class="template-list-item">
+      <div>
+        <strong>{{ t.name }}</strong><br>
+        <span class="muted" style="font-size:0.85rem;">{{ t.subject }}</span>
+      </div>
+      <a href="{{ url_for('email_template_edit', key=t.key) }}" class="btn btn-secondary btn-sm">Edit</a>
+    </div>
+  {% endfor %}
+</div>
+{% endblock %}

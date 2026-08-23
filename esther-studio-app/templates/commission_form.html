@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit commission' if commission else 'New commission' }}{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>{{ 'Edit commission' if commission else 'New commission' }}</h1>
+  </div>
+</div>
+
+<form method="post" class="card" style="max-width:640px;">
+  {% if not commission %}
+    <div class="field">
+      <label for="client_id">Client</label>
+      <select id="client_id" name="client_id" onchange="document.getElementById('new-client-fields').style.display = this.value ? 'none' : 'block';">
+        <option value="">— Add a new client below —</option>
+        {% for cl in clients %}
+          <option value="{{ cl.id }}" {{ 'selected' if preselect_client == cl.id }}>{{ cl.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div id="new-client-fields" style="{{ 'display:none;' if preselect_client }}">
+      <div class="field-row">
+        <div class="field"><label for="new_client_name">New client name</label><input type="text" id="new_client_name" name="new_client_name"></div>
+        <div class="field"><label for="new_client_email">Email</label><input type="email" id="new_client_email" name="new_client_email"></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label for="new_client_phone">Phone</label><input type="text" id="new_client_phone" name="new_client_phone"></div>
+        <div class="field"><label for="new_client_address">Address</label><input type="text" id="new_client_address" name="new_client_address"></div>
+      </div>
+    </div>
+  {% else %}
+    <div class="field">
+      <label>Client</label>
+      <input type="text" value="{{ commission.client_id and (clients | selectattr('id','equalto',commission.client_id) | first).name }}" disabled>
+    </div>
+  {% endif %}
+
+  <div class="field-row">
+    <div class="field">
+      <label for="type">Commission type</label>
+      <select id="type" name="type">
+        {% for t in commission_types %}
+          <option value="{{ t }}" {{ 'selected' if commission and commission.type == t }}>{{ t }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="field">
+      <label for="size">Size / format</label>
+      <input type="text" id="size" name="size" placeholder="e.g. A4 on A3 paper" value="{{ commission.size if commission else '' }}">
+    </div>
+  </div>
+
+  <div class="field">
+    <label for="description">Description</label>
+    <textarea id="description" name="description" rows="3" placeholder="Reference photos, subject, style notes...">{{ commission.description if commission else '' }}</textarea>
+  </div>
+
+  <div class="field-row">
+    <div class="field">
+      <label for="price">Total price ({{ settings.currency_symbol }})</label>
+      <input type="text" id="price" name="price" value="{{ '%.2f'|format(commission.price_pence/100) if commission else '' }}">
+    </div>
+    <div class="field">
+      <label for="deposit">Deposit ({{ settings.currency_symbol }})</label>
+      <input type="text" id="deposit" name="deposit" value="{{ '%.2f'|format(commission.deposit_pence/100) if commission else '' }}">
+    </div>
+  </div>
+
+  <div class="field-row">
+    <div class="field">
+      <label for="status">Status</label>
+      <select id="status" name="status">
+        {% for s in commission_statuses %}
+          <option value="{{ s }}" {{ 'selected' if commission and commission.status == s or (not commission and s == 'Enquiry') }}>{{ s }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="field">
+      <label for="deadline">Deadline</label>
+      <input type="date" id="deadline" name="deadline" value="{{ commission.deadline if commission else '' }}">
+    </div>
+  </div>
+
+  <div class="field">
+    <label for="reference_notes">Reference photo links / notes</label>
+    <textarea id="reference_notes" name="reference_notes" rows="2">{{ commission.reference_notes if commission else '' }}</textarea>
+  </div>
+
+  <div class="field">
+    <label for="internal_notes">Internal notes</label>
+    <textarea id="internal_notes" name="internal_notes" rows="2">{{ commission.internal_notes if commission else '' }}</textarea>
+  </div>
+
+  <div class="form-actions">
+    <button type="submit" class="btn btn-primary">{{ 'Save changes' if commission else 'Create commission' }}</button>
+    <a href="{{ url_for('commission_detail', commission_id=commission.id) if commission else url_for('commissions_list') }}" class="btn btn-secondary">Cancel</a>
+  </div>
+</form>
+{% endblock %}

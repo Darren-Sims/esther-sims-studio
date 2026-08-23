@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Settings{% endblock %}
+{% block content %}
+<div class="page-header"><h1>Settings</h1></div>
+
+<form method="post" class="card" style="max-width:600px;">
+  <div class="field">
+    <label for="business_name">Business name</label>
+    <input type="text" id="business_name" name="business_name" value="{{ settings.business_name }}">
+  </div>
+  <div class="field-row">
+    <div class="field"><label for="business_email">Business email</label><input type="email" id="business_email" name="business_email" value="{{ settings.business_email }}"></div>
+    <div class="field"><label for="business_location">Location</label><input type="text" id="business_location" name="business_location" value="{{ settings.business_location }}"></div>
+  </div>
+  <div class="field">
+    <label for="website_url">Website URL</label>
+    <input type="text" id="website_url" name="website_url" value="{{ settings.website_url }}">
+  </div>
+  <div class="field-row">
+    <div class="field"><label for="invoice_prefix">Invoice number prefix</label><input type="text" id="invoice_prefix" name="invoice_prefix" value="{{ settings.invoice_prefix }}"></div>
+    <div class="field"><label for="currency_symbol">Currency symbol</label><input type="text" id="currency_symbol" name="currency_symbol" value="{{ settings.currency_symbol }}"></div>
+  </div>
+  <div class="field">
+    <label for="default_deposit_percent">Default deposit %</label>
+    <input type="text" id="default_deposit_percent" name="default_deposit_percent" value="{{ settings.default_deposit_percent }}">
+  </div>
+  <div class="field">
+    <label for="payment_instructions">Payment instructions (shown on invoices &amp; in emails)</label>
+    <textarea id="payment_instructions" name="payment_instructions" rows="3">{{ settings.payment_instructions }}</textarea>
+  </div>
+  <div class="form-actions">
+    <button type="submit" class="btn btn-primary">Save settings</button>
+  </div>
+</form>
+{% endblock %}

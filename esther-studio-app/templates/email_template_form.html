@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Edit template{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{{ tpl.name }}</h1></div>
+
+<form method="post" class="card" style="max-width:680px;">
+  <div class="field">
+    <label for="name">Template name</label>
+    <input type="text" id="name" name="name" value="{{ tpl.name }}">
+  </div>
+  <div class="field">
+    <label for="subject">Subject line</label>
+    <input type="text" id="subject" name="subject" value="{{ tpl.subject }}">
+  </div>
+  <div class="field">
+    <label for="body">Body</label>
+    <textarea id="body" name="body" rows="14">{{ tpl.body }}</textarea>
+  </div>
+  <p class="muted" style="font-size:0.82rem;">
+    Available merge fields: <code>{{ '{{client_name}}' }}</code>, <code>{{ '{{client_first_name}}' }}</code>,
+    <code>{{ '{{commission_type}}' }}</code>, <code>{{ '{{size}}' }}</code>, <code>{{ '{{price}}' }}</code>,
+    <code>{{ '{{deposit_amount}}' }}</code>, <code>{{ '{{balance_amount}}' }}</code>, <code>{{ '{{deposit_percent}}' }}</code>,
+    <code>{{ '{{deadline}}' }}</code>, <code>{{ '{{status}}' }}</code>, <code>{{ '{{internal_notes}}' }}</code>,
+    <code>{{ '{{payment_instructions}}' }}</code>, <code>{{ '{{business_name}}' }}</code>, <code>{{ '{{artist_name}}' }}</code>
+  </p>
+  <div class="form-actions">
+    <button type="submit" class="btn btn-primary">Save template</button>
+    <a href="{{ url_for('emails_list') }}" class="btn btn-secondary">Cancel</a>
+  </div>
+</form>
+{% endblock %}

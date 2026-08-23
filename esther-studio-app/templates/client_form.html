@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit client' if client else 'New client' }}{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{{ 'Edit client' if client else 'New client' }}</h1></div>
+
+<form method="post" class="card" style="max-width:560px;">
+  <div class="field">
+    <label for="name">Name</label>
+    <input type="text" id="name" name="name" required value="{{ client.name if client else '' }}">
+  </div>
+  <div class="field-row">
+    <div class="field"><label for="email">Email</label><input type="email" id="email" name="email" value="{{ client.email if client else '' }}"></div>
+    <div class="field"><label for="phone">Phone</label><input type="text" id="phone" name="phone" value="{{ client.phone if client else '' }}"></div>
+  </div>
+  <div class="field">
+    <label for="address">Address</label>
+    <input type="text" id="address" name="address" value="{{ client.address if client else '' }}">
+  </div>
+  <div class="field">
+    <label for="notes">Notes</label>
+    <textarea id="notes" name="notes" rows="3">{{ client.notes if client else '' }}</textarea>
+  </div>
+  <div class="form-actions">
+    <button type="submit" class="btn btn-primary">{{ 'Save changes' if client else 'Add client' }}</button>
+    <a href="{{ url_for('client_detail', client_id=client.id) if client else url_for('clients_list') }}" class="btn btn-secondary">Cancel</a>
+  </div>
+</form>
+{% endblock %}
