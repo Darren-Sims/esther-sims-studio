@@ -181,6 +181,50 @@ def logout():
     return redirect(url_for("login"))
 
 
+@app.route("/forgot-password", methods=["GET", "POST"])
+def forgot_password():
+    if current_user():
+        return redirect(url_for("dashboard"))
+
+    recovery_code = os.environ.get("RECOVERY_CODE", "")
+
+    if request.method == "POST":
+        if not recovery_code:
+            flash(
+                "Password recovery isn't set up yet — RECOVERY_CODE needs to be "
+                "configured on the server.",
+                "error",
+            )
+            return render_template("forgot_password.html")
+
+        submitted_code = request.form.get("recovery_code", "")
+        email = request.form.get("email", "").strip().lower()
+        password = request.form.get("password", "")
+        confirm = request.form.get("confirm", "")
+
+        if not secrets.compare_digest(submitted_code, recovery_code):
+            flash("Recovery code is incorrect.", "error")
+        elif not email or not password:
+            flash("Please fill in every field.", "error")
+        elif password != confirm:
+            flash("Passwords don't match.", "error")
+        elif len(password) < 8:
+            flash("Password should be at least 8 characters.", "error")
+        else:
+            conn = get_db()
+            user = conn.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
+            if user:
+                conn.execute(
+                    "UPDATE users SET password_hash = ? WHERE id = ?",
+                    (generate_password_hash(password, method="pbkdf2:sha256"), user["id"]),
+                )
+                conn.commit()
+            flash("If that email matches an account, its password has been reset. You can log in now.", "success")
+            return redirect(url_for("login"))
+
+    return render_template("forgot_password.html")
+
+
 # -------------------------------------------------------------- dashboard --
 
 @app.route("/")
