@@ -7,36 +7,67 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
-  <div class="auth-wrap">
-    <div class="auth-card">
-      <img src="https://cdn.prod.website-files.com/63ee391d6609d63fbc92b869/640f16c3a90a2d4d45e15ad9_nav-logo.svg" alt="Esther Sims Studio">
-      <h1>Studio Admin</h1>
-      <p class="tag">Commissions, invoices &amp; client emails in one place.</p>
+  <div class="split-auth">
+    <div class="split-visual">
+      <div class="collage-grid">
+        <img src="https://cdn.prod.website-files.com/63ee391d6609d63fbc92b869/6a836eeaa3dd32eb41c12e74_nova-scotia.jpg" alt="">
+        <img src="https://cdn.prod.website-files.com/63ee391d6609d63fbc92b869/642c279d6377157fa48b65dd_rezised_Quiet.webp" alt="">
+        <img src="https://cdn.prod.website-files.com/63ee391d6609d63fbc92b869/64230fe150707b2a3af0ecc7_EC2D750E-B6DE-44D2-A84C-FB9C327139D3_1_105_c.webp" alt="">
+        <img src="https://cdn.prod.website-files.com/63ee391d6609d63fbc92b869/64230f2e88101ae9206bc38f_208336B6-2AA6-47E4-90B4-5ECA0517EAA8_1_105_c.webp" alt="">
+        <img src="https://cdn.prod.website-files.com/63ee391d6609d63fbc92b869/6a836f94feac11bfefb40cb0_georgian.jpg" alt="">
+        <img src="https://cdn.prod.website-files.com/63ee391d6609d63fbc92b869/6a834443d0e0ca7c37cf6ffe_saul-chloe.jpg" alt="">
+        <img src="https://cdn.prod.website-files.com/63ee391d6609d63fbc92b869/648748881263711f54937ca2_516C1B9B-82C2-4A59-94C8-FA069CBF01BA_1_105_c.webp" alt="">
+        <img src="https://cdn.prod.website-files.com/63ee391d6609d63fbc92b869/642c1fbc573e48b3c066e931_Jude%20%26%20Zino.webp" alt="">
+        <img src="https://cdn.prod.website-files.com/63ee391d6609d63fbc92b869/642c1fbc374e0c3998edd6df_Family%20Portrait.webp" alt="">
+        <img src="https://cdn.prod.website-files.com/63ee391d6609d63fbc92b869/6422ae9f3da290c2b863ac56_Pet%20Portrait.webp" alt="">
+        <img src="https://cdn.prod.website-files.com/63ee391d6609d63fbc92b869/642308b488101a8e006abf5c_Centre%20Image.webp" alt="">
+        <img src="https://cdn.prod.website-files.com/63ee391d6609d63fbc92b869/67bb7d81a6b94206c07ed384_resized_IMG_3464.webp" alt="">
+      </div>
+      <div class="split-visual-scrim"></div>
+      <div class="split-visual-top">
+        <img src="https://cdn.prod.website-files.com/63ee391d6609d63fbc92b869/640f16c3a90a2d4d45e15ad9_nav-logo.svg" alt="">
+        <span>Esther Sims Studio</span>
+      </div>
+      <div class="split-visual-bottom">
+        <h2>Ink &amp; watercolour, made to order.</h2>
+        <p>Studio Admin — commissions, invoices &amp; client emails in one place.</p>
+      </div>
+    </div>
 
-      {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-          {% for category, message in messages %}
-            <div class="flash flash-{{ category }}">{{ message }}</div>
-          {% endfor %}
-        {% endif %}
-      {% endwith %}
+    <div class="split-form-side">
+      <div class="split-form-inner">
+        <div class="split-form-brand">
+          <img src="https://cdn.prod.website-files.com/63ee391d6609d63fbc92b869/640f16c3a90a2d4d45e15ad9_nav-logo.svg" alt="Esther Sims Studio">
+          <span>Esther Sims Studio</span>
+        </div>
+        <h1>Log in to Studio Admin</h1>
+        <p class="tag">Commissions, invoices &amp; client emails in one place.</p>
 
-      <form method="post">
-        <div class="field">
-          <label for="email">Email</label>
-          <input type="email" id="email" name="email" required autofocus>
-        </div>
-        <div class="field">
-          <label for="password">Password</label>
-          <input type="password" id="password" name="password" required>
-        </div>
-        <div class="form-actions">
-          <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center;">Log in</button>
-        </div>
-      </form>
-      <p class="tag" style="margin-top:1rem;">
-        <a href="{{ url_for('forgot_password') }}">Forgot password?</a>
-      </p>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="flash flash-{{ category }}">{{ message }}</div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <form method="post">
+          <div class="field">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" required autofocus>
+          </div>
+          <div class="field">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" required>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center;">Log in</button>
+          </div>
+        </form>
+        <p class="tag" style="margin-top:1rem;">
+          <a href="{{ url_for('forgot_password') }}">Forgot password?</a>
+        </p>
+      </div>
     </div>
   </div>
 </body>
