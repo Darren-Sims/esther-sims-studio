@@ -695,21 +695,24 @@ def email_compose(commission_id, key):
 # Field-name aliases we'll match against incoming form data. Matching is
 # case-insensitive and hyphens/underscores are treated as spaces, so
 # Webflow's "Commission-request-info" normalizes to "commission request
-# info" and matches the "message" alias below. Includes the exact field
-# names from the site's live contact form (esthersimsstudio.co.uk/contact)
-# plus generic variants in case the form changes.
+# info" and matches the "commission_request" alias below. Includes the
+# exact field names from the site's live contact form
+# (esthersimsstudio.co.uk/contact) plus generic variants in case the form
+# changes.
 _CONTACT_FIELD_ALIASES = {
     "name": ("name", "full name", "your name"),
     "email": ("email", "your email", "email address"),
     "phone": ("phone", "phone number", "tel", "telephone"),
-    "message": (
-        "message", "project", "details", "your message", "notes", "description",
+    "commission_request": (
+        "message", "project", "details", "your message", "description",
         "commission request info",
     ),
+    "uk_address": ("uk address", "do you have a uk postal address"),
+    "how_heard": ("how did you hear about me", "how did you hear about us"),
 }
 
 # Fields with no CRM value — consent checkboxes, CAPTCHA tokens — that
-# should never be written into a client's notes.
+# should never be written anywhere.
 _CONTACT_IGNORE_FIELDS = {"privacy checkbox", "cf turnstile response", "g recaptcha response"}
 
 
@@ -717,23 +720,24 @@ def _normalize_field_key(key):
     return re.sub(r"[-_]+", " ", key).strip().lower()
 
 
-def _pick_contact_field(data, aliases, norm_map=None):
-    norm_map = norm_map if norm_map is not None else {
-        _normalize_field_key(k): v for k, v in data.items()
-    }
+def _pick_contact_field(norm_map, aliases):
     for alias in aliases:
         if alias in norm_map and str(norm_map[alias]).strip():
             return str(norm_map[alias]).strip()
     return ""
 
 
+def _is_checked(value):
+    return str(value).strip().lower() in ("on", "true", "yes", "1", "checked")
+
+
 @app.route("/webhooks/contact-form", methods=["POST"])
 def contact_form_webhook():
     """Receives Webflow 'Form Submission' webhook payloads and files each
-    submission as a client lead — updating an existing client's notes if
-    the email matches one already in the system, otherwise creating a new
-    client. Requires a shared-secret token so the endpoint can't be spammed
-    by anyone who finds the URL.
+    submission as a client lead — updating an existing client if the
+    email matches one already in the system, otherwise creating a new
+    client. Requires a shared-secret token so the endpoint can't be
+    spammed by anyone who finds the URL.
     """
     expected_token = os.environ.get("CONTACT_FORM_TOKEN", "")
     submitted_token = request.args.get("token", "")
@@ -747,7 +751,7 @@ def contact_form_webhook():
 
     norm_map = {_normalize_field_key(k): v for k, v in data.items()}
 
-    name = _pick_contact_field(data, _CONTACT_FIELD_ALIASES["name"], norm_map)
+    name = _pick_contact_field(norm_map, _CONTACT_FIELD_ALIASES["name"])
     if not name:
         # Webflow's contact form splits name into "First-name" / "Last-name"
         # rather than a single "Name" field.
@@ -755,23 +759,26 @@ def contact_form_webhook():
         last = str(norm_map.get("last name", "")).strip()
         name = f"{first} {last}".strip()
 
-    email = _pick_contact_field(data, _CONTACT_FIELD_ALIASES["email"], norm_map)
-    phone = _pick_contact_field(data, _CONTACT_FIELD_ALIASES["phone"], norm_map)
-    message = _pick_contact_field(data, _CONTACT_FIELD_ALIASES["message"], norm_map)
+    email = _pick_contact_field(norm_map, _CONTACT_FIELD_ALIASES["email"])
+    phone = _pick_contact_field(norm_map, _CONTACT_FIELD_ALIASES["phone"])
+    commission_request = _pick_contact_field(norm_map, _CONTACT_FIELD_ALIASES["commission_request"])
+    uk_address = _pick_contact_field(norm_map, _CONTACT_FIELD_ALIASES["uk_address"])
+    how_heard = _pick_contact_field(norm_map, _CONTACT_FIELD_ALIASES["how_heard"])
+    wants_gift_voucher = _is_checked(norm_map.get("gift voucher checkbox", ""))
 
+    # Anything not mapped to a known field still gets preserved, rather
+    # than silently dropped, in case the form gains new fields later.
     mapped_keys = {alias for aliases in _CONTACT_FIELD_ALIASES.values() for alias in aliases}
-    mapped_keys |= {"first name", "last name"}
+    mapped_keys |= {"first name", "last name", "gift voucher checkbox"}
     extra_lines = [
         f"{k.title()}: {v}" for k, v in norm_map.items()
         if k not in mapped_keys and k not in _CONTACT_IGNORE_FIELDS
         and v not in (None, "", False, 0)
     ]
+    extra_note = "\n".join(extra_lines)
 
-    note_lines = [f"[Website contact form — {datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}]"]
-    if message:
-        note_lines.append(message)
-    note_lines.extend(extra_lines)
-    note_text = "\n".join(note_lines)
+    timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
+    dated_request = f"[{timestamp}] {commission_request}" if commission_request else ""
 
     conn = get_db()
     existing = None
@@ -781,15 +788,31 @@ def contact_form_webhook():
         ).fetchone()
 
     if existing:
-        updated_notes = ((existing["notes"] or "") + "\n\n" + note_text).strip()
+        merged_request = "\n\n".join(
+            filter(None, [existing["commission_request"], dated_request])
+        )
+        merged_notes = "\n\n".join(filter(None, [existing["notes"], extra_note]))
         conn.execute(
-            "UPDATE clients SET notes = ?, phone = COALESCE(NULLIF(?, ''), phone) WHERE id = ?",
-            (updated_notes, phone, existing["id"]),
+            """UPDATE clients SET
+                 phone = COALESCE(NULLIF(?, ''), phone),
+                 commission_request = ?,
+                 uk_address = COALESCE(NULLIF(?, ''), uk_address),
+                 how_heard = COALESCE(NULLIF(?, ''), how_heard),
+                 wants_gift_voucher = ?,
+                 notes = ?
+               WHERE id = ?""",
+            (phone, merged_request, uk_address, how_heard, wants_gift_voucher, merged_notes, existing["id"]),
         )
     else:
         conn.execute(
-            "INSERT INTO clients (name, email, phone, address, notes, created_at) VALUES (?, ?, ?, ?, ?, ?)",
-            (name or "Website enquiry", email, phone, "", note_text, datetime.utcnow().isoformat()),
+            """INSERT INTO clients
+                 (name, email, phone, address, notes, commission_request, uk_address,
+                  how_heard, wants_gift_voucher, created_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                name or "Website enquiry", email, phone, "", extra_note, dated_request,
+                uk_address, how_heard, wants_gift_voucher, datetime.utcnow().isoformat(),
+            ),
         )
     conn.commit()
 

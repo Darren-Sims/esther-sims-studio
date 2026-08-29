@@ -23,7 +23,7 @@
       <tbody>
       {% for c in clients %}
         <tr onclick="window.location='{{ url_for('client_detail', client_id=c.id) }}'" style="cursor:pointer;">
-          <td>{{ c.name }}</td>
+          <td>{{ c.name }}{% if c.commission_request %} <span class="badge badge-neutral">Website</span>{% endif %}</td>
           <td>{{ c.email or '—' }}</td>
           <td>{{ c.phone or '—' }}</td>
         </tr>

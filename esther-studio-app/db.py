@@ -173,6 +173,15 @@ CREATE TABLE IF NOT EXISTS clients (
     created_at TEXT NOT NULL
 );
 
+-- Structured fields captured from the website contact form (added after
+-- clients already existed in production, hence the ALTERs rather than
+-- being in the CREATE TABLE above). IF NOT EXISTS makes these safe to
+-- re-run on every startup.
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS commission_request TEXT;
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS uk_address TEXT;
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS how_heard TEXT;
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS wants_gift_voucher BOOLEAN NOT NULL DEFAULT FALSE;
+
 CREATE TABLE IF NOT EXISTS commissions (
     id SERIAL PRIMARY KEY,
     client_id INTEGER NOT NULL REFERENCES clients(id) ON DELETE CASCADE,

@@ -17,7 +17,7 @@
       <tr><td class="muted">Phone</td><td>{{ client.phone or '—' }}</td></tr>
       <tr><td class="muted">Address</td><td>{{ client.address or '—' }}</td></tr>
     </table>
-    {% if client.notes %}<p style="margin-top:14px;"><strong>Notes</strong><br>{{ client.notes }}</p>{% endif %}
+    {% if client.notes %}<p style="margin-top:14px; white-space:pre-wrap;"><strong>Notes</strong><br>{{ client.notes }}</p>{% endif %}
     <form method="post" action="{{ url_for('client_delete', client_id=client.id) }}" onsubmit="return confirmDelete('Delete this client and all their commissions?');" style="margin-top:16px;">
       <button type="submit" class="btn btn-danger btn-sm">Delete client</button>
     </form>
@@ -43,4 +43,18 @@
     {% endif %}
   </div>
 </div>
+
+{% if client.commission_request or client.uk_address or client.how_heard or client.wants_gift_voucher %}
+<div class="card">
+  <h2>Website enquiry</h2>
+  <table class="list">
+    <tr><td class="muted">UK postal address</td><td>{{ client.uk_address or '—' }}</td></tr>
+    <tr><td class="muted">How they heard about us</td><td>{{ client.how_heard or '—' }}</td></tr>
+    <tr><td class="muted">Gift voucher</td><td>{{ 'Yes' if client.wants_gift_voucher else 'No' }}</td></tr>
+  </table>
+  {% if client.commission_request %}
+    <p style="margin-top:14px; white-space:pre-wrap;"><strong>Commission request</strong><br>{{ client.commission_request }}</p>
+  {% endif %}
+</div>
+{% endif %}
 {% endblock %}
