@@ -2,7 +2,10 @@
 {% block title %}{{ client.name }}{% endblock %}
 {% block content %}
 <div class="page-header">
-  <div><h1>{{ client.name }}</h1></div>
+  <div>
+    <a href="{{ url_for('clients_list') }}" class="btn btn-ghost btn-sm" style="margin-bottom:8px; padding-left:0;">&larr; All clients</a>
+    <h1>{{ client.name }}</h1>
+  </div>
   <div style="display:flex; gap:8px;">
     <a href="{{ url_for('client_edit', client_id=client.id) }}" class="btn btn-secondary">Edit</a>
     <a href="{{ url_for('commission_new', client_id=client.id) }}" class="btn btn-primary">+ New commission</a>
