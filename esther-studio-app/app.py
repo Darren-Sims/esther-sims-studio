@@ -777,8 +777,7 @@ def contact_form_webhook():
     ]
     extra_note = "\n".join(extra_lines)
 
-    timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
-    dated_request = f"[{timestamp}] {commission_request}" if commission_request else ""
+    submitted_at = datetime.utcnow().strftime("%d %b %Y, %H:%M UTC")
 
     conn = get_db()
     existing = None
@@ -789,7 +788,7 @@ def contact_form_webhook():
 
     if existing:
         merged_request = "\n\n".join(
-            filter(None, [existing["commission_request"], dated_request])
+            filter(None, [existing["commission_request"], commission_request])
         )
         merged_notes = "\n\n".join(filter(None, [existing["notes"], extra_note]))
         conn.execute(
@@ -799,19 +798,23 @@ def contact_form_webhook():
                  uk_address = COALESCE(NULLIF(?, ''), uk_address),
                  how_heard = COALESCE(NULLIF(?, ''), how_heard),
                  wants_gift_voucher = ?,
+                 enquiry_submitted_at = ?,
                  notes = ?
                WHERE id = ?""",
-            (phone, merged_request, uk_address, how_heard, wants_gift_voucher, merged_notes, existing["id"]),
+            (
+                phone, merged_request, uk_address, how_heard, wants_gift_voucher,
+                submitted_at, merged_notes, existing["id"],
+            ),
         )
     else:
         conn.execute(
             """INSERT INTO clients
                  (name, email, phone, address, notes, commission_request, uk_address,
-                  how_heard, wants_gift_voucher, created_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                  how_heard, wants_gift_voucher, enquiry_submitted_at, created_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
-                name or "Website enquiry", email, phone, "", extra_note, dated_request,
-                uk_address, how_heard, wants_gift_voucher, datetime.utcnow().isoformat(),
+                name or "Website enquiry", email, phone, "", extra_note, commission_request,
+                uk_address, how_heard, wants_gift_voucher, submitted_at, datetime.utcnow().isoformat(),
             ),
         )
     conn.commit()
