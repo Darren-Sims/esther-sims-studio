@@ -23,6 +23,21 @@
     </form>
   </div>
 
+  {% if client.commission_request or client.uk_address or client.how_heard or client.wants_gift_voucher or client.enquiry_submitted_at %}
+  <div class="card">
+    <h2>Website enquiry</h2>
+    <table class="list">
+      <tr><td class="muted">Submitted</td><td>{{ client.enquiry_submitted_at or '—' }}</td></tr>
+      <tr><td class="muted">UK postal address</td><td>{{ client.uk_address or '—' }}</td></tr>
+      <tr><td class="muted">How they heard about us</td><td>{{ client.how_heard or '—' }}</td></tr>
+      <tr><td class="muted">Gift voucher</td><td>{{ 'Yes' if client.wants_gift_voucher else 'No' }}</td></tr>
+    </table>
+    {% if client.commission_request %}
+      <p style="margin-top:14px; white-space:pre-wrap;"><strong>Commission request</strong><br>{{ client.commission_request }}</p>
+    {% endif %}
+  </div>
+  {% endif %}
+
   <div class="card">
     <h2>Commissions</h2>
     {% if commissions %}
@@ -43,19 +58,4 @@
     {% endif %}
   </div>
 </div>
-
-{% if client.commission_request or client.uk_address or client.how_heard or client.wants_gift_voucher or client.enquiry_submitted_at %}
-<div class="card">
-  <h2>Website enquiry</h2>
-  <table class="list">
-    <tr><td class="muted">Submitted</td><td>{{ client.enquiry_submitted_at or '—' }}</td></tr>
-    <tr><td class="muted">UK postal address</td><td>{{ client.uk_address or '—' }}</td></tr>
-    <tr><td class="muted">How they heard about us</td><td>{{ client.how_heard or '—' }}</td></tr>
-    <tr><td class="muted">Gift voucher</td><td>{{ 'Yes' if client.wants_gift_voucher else 'No' }}</td></tr>
-  </table>
-  {% if client.commission_request %}
-    <p style="margin-top:14px; white-space:pre-wrap;"><strong>Commission request</strong><br>{{ client.commission_request }}</p>
-  {% endif %}
-</div>
-{% endif %}
 {% endblock %}
