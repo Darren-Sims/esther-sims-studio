@@ -70,6 +70,24 @@ def require_setup():
         return redirect(url_for("setup"))
 
 
+@app.before_request
+def maybe_run_retention_cleanup():
+    # Opportunistic: runs the data-retention sweep at most once a day,
+    # piggybacking on whatever request happens to arrive after the gap,
+    # rather than needing a separate scheduled job.
+    if request.endpoint in ("setup", "static"):
+        return
+    conn = get_db()
+    settings = db.get_settings(conn)
+    last_run = settings.get("last_retention_run", "")
+    if last_run and (datetime.utcnow() - datetime.fromisoformat(last_run)) < timedelta(days=1):
+        return
+    deleted, anonymized = db.run_retention_cleanup(conn)
+    db.set_setting(conn, "last_retention_run", datetime.utcnow().isoformat())
+    db.set_setting(conn, "last_retention_deleted", str(deleted))
+    db.set_setting(conn, "last_retention_anonymized", str(anonymized))
+
+
 @app.context_processor
 def inject_globals():
     conn = get_db()
@@ -290,15 +308,16 @@ def clients_list():
 def client_new():
     if request.method == "POST":
         conn = get_db()
+        now = datetime.utcnow().isoformat()
         cur = conn.execute(
-            "INSERT INTO clients (name, email, phone, address, notes, created_at) VALUES (?, ?, ?, ?, ?, ?) RETURNING id",
+            "INSERT INTO clients (name, email, phone, address, notes, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id",
             (
                 request.form.get("name", "").strip(),
                 request.form.get("email", "").strip(),
                 request.form.get("phone", "").strip(),
                 request.form.get("address", "").strip(),
                 request.form.get("notes", "").strip(),
-                datetime.utcnow().isoformat(),
+                now, now,
             ),
         )
         client_id = cur.fetchone()["id"]
@@ -330,13 +349,14 @@ def client_edit(client_id):
         abort(404)
     if request.method == "POST":
         conn.execute(
-            "UPDATE clients SET name=?, email=?, phone=?, address=?, notes=? WHERE id=?",
+            "UPDATE clients SET name=?, email=?, phone=?, address=?, notes=?, updated_at=? WHERE id=?",
             (
                 request.form.get("name", "").strip(),
                 request.form.get("email", "").strip(),
                 request.form.get("phone", "").strip(),
                 request.form.get("address", "").strip(),
                 request.form.get("notes", "").strip(),
+                datetime.utcnow().isoformat(),
                 client_id,
             ),
         )
@@ -379,14 +399,15 @@ def commission_new():
     if request.method == "POST":
         client_id = request.form.get("client_id")
         if request.form.get("new_client_name"):
+            new_client_now = datetime.utcnow().isoformat()
             cur = conn.execute(
-                "INSERT INTO clients (name, email, phone, address, notes, created_at) VALUES (?, ?, ?, ?, '', ?) RETURNING id",
+                "INSERT INTO clients (name, email, phone, address, notes, created_at, updated_at) VALUES (?, ?, ?, ?, '', ?, ?) RETURNING id",
                 (
                     request.form.get("new_client_name", "").strip(),
                     request.form.get("new_client_email", "").strip(),
                     request.form.get("new_client_phone", "").strip(),
                     request.form.get("new_client_address", "").strip(),
-                    datetime.utcnow().isoformat(),
+                    new_client_now, new_client_now,
                 ),
             )
             client_id = cur.fetchone()["id"]
@@ -786,6 +807,8 @@ def contact_form_webhook():
             "SELECT * FROM clients WHERE email = ? ORDER BY created_at DESC LIMIT 1", (email,)
         ).fetchone()
 
+    now_iso = datetime.utcnow().isoformat()
+
     if existing:
         merged_request = "\n\n".join(
             filter(None, [existing["commission_request"], commission_request])
@@ -799,22 +822,23 @@ def contact_form_webhook():
                  how_heard = COALESCE(NULLIF(?, ''), how_heard),
                  wants_gift_voucher = ?,
                  enquiry_submitted_at = ?,
-                 notes = ?
+                 notes = ?,
+                 updated_at = ?
                WHERE id = ?""",
             (
                 phone, merged_request, uk_address, how_heard, wants_gift_voucher,
-                submitted_at, merged_notes, existing["id"],
+                submitted_at, merged_notes, now_iso, existing["id"],
             ),
         )
     else:
         conn.execute(
             """INSERT INTO clients
                  (name, email, phone, address, notes, commission_request, uk_address,
-                  how_heard, wants_gift_voucher, enquiry_submitted_at, created_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                  how_heard, wants_gift_voucher, enquiry_submitted_at, created_at, updated_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 name or "Website enquiry", email, phone, "", extra_note, commission_request,
-                uk_address, how_heard, wants_gift_voucher, submitted_at, datetime.utcnow().isoformat(),
+                uk_address, how_heard, wants_gift_voucher, submitted_at, now_iso, now_iso,
             ),
         )
     conn.commit()
@@ -838,6 +862,21 @@ def settings_page():
         flash("Settings saved.", "success")
         return redirect(url_for("settings_page"))
     return render_template("settings.html")
+
+
+@app.route("/settings/run-retention-cleanup", methods=["POST"])
+@login_required
+def run_retention_cleanup_now():
+    conn = get_db()
+    deleted, anonymized = db.run_retention_cleanup(conn)
+    db.set_setting(conn, "last_retention_run", datetime.utcnow().isoformat())
+    db.set_setting(conn, "last_retention_deleted", str(deleted))
+    db.set_setting(conn, "last_retention_anonymized", str(anonymized))
+    flash(
+        f"Retention cleanup ran: {deleted} stale lead(s) deleted, {anonymized} client(s) anonymized.",
+        "success",
+    )
+    return redirect(url_for("settings_page"))
 
 
 if __name__ == "__main__":

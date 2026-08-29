@@ -8,7 +8,7 @@ calls that return a fetchable cursor.
 """
 
 import os
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 
 import psycopg2
 import psycopg2.extras
@@ -182,6 +182,8 @@ ALTER TABLE clients ADD COLUMN IF NOT EXISTS uk_address TEXT;
 ALTER TABLE clients ADD COLUMN IF NOT EXISTS how_heard TEXT;
 ALTER TABLE clients ADD COLUMN IF NOT EXISTS wants_gift_voucher BOOLEAN NOT NULL DEFAULT FALSE;
 ALTER TABLE clients ADD COLUMN IF NOT EXISTS enquiry_submitted_at TEXT;
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS updated_at TEXT;
+UPDATE clients SET updated_at = created_at WHERE updated_at IS NULL;
 
 CREATE TABLE IF NOT EXISTS commissions (
     id SERIAL PRIMARY KEY,
@@ -312,3 +314,73 @@ def next_invoice_number(conn):
     number = f"{prefix}-{year}-{seq:03d}"
     set_setting(conn, "next_invoice_seq", str(seq + 1))
     return number
+
+
+# Matches the privacy policy's stated 3-year retention period. Note this
+# is shorter than the ~6-year period UK tax law expects invoices to be
+# kept for, which is why clients with commissions are anonymized rather
+# than deleted outright — see run_retention_cleanup().
+RETENTION_YEARS = 3
+
+
+def run_retention_cleanup(conn):
+    """Enforces the 3-year personal-data retention window described in the
+    studio's privacy policy.
+
+    - Pure leads (contact-form enquiries that never became a commissioned
+      client) are deleted outright once stale — there's no financial
+      record tied to them, so nothing needs to be kept.
+    - Clients who DO have a commission are anonymized instead of deleted:
+      their name/email/phone/address/notes/enquiry details are cleared,
+      but the commission and invoice rows are left alone, since UK tax
+      law expects invoices to be kept for about 6 years — longer than
+      this 3-year personal-data window. Anyone with an unpaid invoice is
+      skipped, since the studio still needs their contact details to
+      chase payment.
+
+    Staleness is measured from each client's `updated_at` (falling back
+    to `created_at` for rows written before that column existed), so a
+    client who's had any recent activity — a new commission, an edit, a
+    repeat website enquiry — resets their own clock.
+
+    Returns (deleted_count, anonymized_count).
+    """
+    cutoff = (datetime.utcnow() - timedelta(days=365 * RETENTION_YEARS)).isoformat()
+
+    stale_leads = conn.execute(
+        """SELECT c.id FROM clients c
+           LEFT JOIN commissions co ON co.client_id = c.id
+           WHERE co.id IS NULL AND COALESCE(c.updated_at, c.created_at) < ?""",
+        (cutoff,),
+    ).fetchall()
+    deleted_count = 0
+    for row in stale_leads:
+        conn.execute("DELETE FROM clients WHERE id = ?", (row["id"],))
+        deleted_count += 1
+
+    stale_clients = conn.execute(
+        """SELECT DISTINCT c.id FROM clients c
+           JOIN commissions co ON co.client_id = c.id
+           WHERE COALESCE(c.updated_at, c.created_at) < ?
+             AND c.name != 'Former client'
+             AND NOT EXISTS (
+                 SELECT 1 FROM invoices i
+                 JOIN commissions co2 ON co2.id = i.commission_id
+                 WHERE co2.client_id = c.id AND i.status IN ('Draft', 'Sent', 'Overdue')
+             )""",
+        (cutoff,),
+    ).fetchall()
+    anonymized_count = 0
+    for row in stale_clients:
+        conn.execute(
+            """UPDATE clients SET
+                 name = 'Former client', email = NULL, phone = NULL, address = NULL,
+                 notes = NULL, commission_request = NULL, uk_address = NULL,
+                 how_heard = NULL, wants_gift_voucher = FALSE, enquiry_submitted_at = NULL
+               WHERE id = ?""",
+            (row["id"],),
+        )
+        anonymized_count += 1
+
+    conn.commit()
+    return deleted_count, anonymized_count
