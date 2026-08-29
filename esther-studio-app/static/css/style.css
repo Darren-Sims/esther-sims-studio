@@ -303,8 +303,7 @@ textarea { font-family: 'Inter', sans-serif; resize: vertical; }
 
 .split-visual {
   position: relative;
-  flex: 1 1 46%;
-  max-width: 620px;
+  flex: 1 1 50%;
   background: var(--forest-dark);
   overflow: hidden;
   display: flex;
@@ -376,7 +375,7 @@ textarea { font-family: 'Inter', sans-serif; resize: vertical; }
 }
 
 .split-form-side {
-  flex: 1;
+  flex: 1 1 50%;
   display: flex;
   align-items: center;
   justify-content: center;
