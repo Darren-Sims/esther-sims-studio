@@ -690,6 +690,83 @@ def email_compose(commission_id, key):
     )
 
 
+# ------------------------------------------------------------ contact form --
+
+# Field-name aliases we'll match against incoming form data, case-insensitively.
+_CONTACT_FIELD_ALIASES = {
+    "name": ("name", "full name", "your name"),
+    "email": ("email", "your email", "email address"),
+    "phone": ("phone", "phone number", "tel", "telephone"),
+    "message": ("message", "project", "details", "your message", "notes", "description"),
+}
+
+
+def _pick_contact_field(data, aliases):
+    lower_map = {k.strip().lower(): v for k, v in data.items()}
+    for alias in aliases:
+        if alias in lower_map and str(lower_map[alias]).strip():
+            return str(lower_map[alias]).strip()
+    return ""
+
+
+@app.route("/webhooks/contact-form", methods=["POST"])
+def contact_form_webhook():
+    """Receives Webflow 'Form Submission' webhook payloads and files each
+    submission as a client lead — updating an existing client's notes if
+    the email matches one already in the system, otherwise creating a new
+    client. Requires a shared-secret token so the endpoint can't be spammed
+    by anyone who finds the URL.
+    """
+    expected_token = os.environ.get("CONTACT_FORM_TOKEN", "")
+    submitted_token = request.args.get("token", "")
+    if not expected_token or not secrets.compare_digest(submitted_token, expected_token):
+        abort(403)
+
+    payload = request.get_json(silent=True) or {}
+    data = payload.get("payload", {}).get("data") or payload.get("data") or {}
+    if not isinstance(data, dict):
+        data = {}
+
+    name = _pick_contact_field(data, _CONTACT_FIELD_ALIASES["name"])
+    email = _pick_contact_field(data, _CONTACT_FIELD_ALIASES["email"])
+    phone = _pick_contact_field(data, _CONTACT_FIELD_ALIASES["phone"])
+    message = _pick_contact_field(data, _CONTACT_FIELD_ALIASES["message"])
+
+    mapped_keys = {alias for aliases in _CONTACT_FIELD_ALIASES.values() for alias in aliases}
+    extra_lines = [
+        f"{k}: {v}" for k, v in data.items()
+        if k.strip().lower() not in mapped_keys and str(v).strip()
+    ]
+
+    note_lines = [f"[Website contact form — {datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}]"]
+    if message:
+        note_lines.append(message)
+    note_lines.extend(extra_lines)
+    note_text = "\n".join(note_lines)
+
+    conn = get_db()
+    existing = None
+    if email:
+        existing = conn.execute(
+            "SELECT * FROM clients WHERE email = ? ORDER BY created_at DESC LIMIT 1", (email,)
+        ).fetchone()
+
+    if existing:
+        updated_notes = ((existing["notes"] or "") + "\n\n" + note_text).strip()
+        conn.execute(
+            "UPDATE clients SET notes = ?, phone = COALESCE(NULLIF(?, ''), phone) WHERE id = ?",
+            (updated_notes, phone, existing["id"]),
+        )
+    else:
+        conn.execute(
+            "INSERT INTO clients (name, email, phone, address, notes, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+            (name or "Website enquiry", email, phone, "", note_text, datetime.utcnow().isoformat()),
+        )
+    conn.commit()
+
+    return {"ok": True}, 200
+
+
 # ---------------------------------------------------------------- settings --
 
 @app.route("/settings", methods=["GET", "POST"])
