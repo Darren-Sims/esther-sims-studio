@@ -692,20 +692,38 @@ def email_compose(commission_id, key):
 
 # ------------------------------------------------------------ contact form --
 
-# Field-name aliases we'll match against incoming form data, case-insensitively.
+# Field-name aliases we'll match against incoming form data. Matching is
+# case-insensitive and hyphens/underscores are treated as spaces, so
+# Webflow's "Commission-request-info" normalizes to "commission request
+# info" and matches the "message" alias below. Includes the exact field
+# names from the site's live contact form (esthersimsstudio.co.uk/contact)
+# plus generic variants in case the form changes.
 _CONTACT_FIELD_ALIASES = {
     "name": ("name", "full name", "your name"),
     "email": ("email", "your email", "email address"),
     "phone": ("phone", "phone number", "tel", "telephone"),
-    "message": ("message", "project", "details", "your message", "notes", "description"),
+    "message": (
+        "message", "project", "details", "your message", "notes", "description",
+        "commission request info",
+    ),
 }
 
+# Fields with no CRM value — consent checkboxes, CAPTCHA tokens — that
+# should never be written into a client's notes.
+_CONTACT_IGNORE_FIELDS = {"privacy checkbox", "cf turnstile response", "g recaptcha response"}
 
-def _pick_contact_field(data, aliases):
-    lower_map = {k.strip().lower(): v for k, v in data.items()}
+
+def _normalize_field_key(key):
+    return re.sub(r"[-_]+", " ", key).strip().lower()
+
+
+def _pick_contact_field(data, aliases, norm_map=None):
+    norm_map = norm_map if norm_map is not None else {
+        _normalize_field_key(k): v for k, v in data.items()
+    }
     for alias in aliases:
-        if alias in lower_map and str(lower_map[alias]).strip():
-            return str(lower_map[alias]).strip()
+        if alias in norm_map and str(norm_map[alias]).strip():
+            return str(norm_map[alias]).strip()
     return ""
 
 
@@ -727,15 +745,26 @@ def contact_form_webhook():
     if not isinstance(data, dict):
         data = {}
 
-    name = _pick_contact_field(data, _CONTACT_FIELD_ALIASES["name"])
-    email = _pick_contact_field(data, _CONTACT_FIELD_ALIASES["email"])
-    phone = _pick_contact_field(data, _CONTACT_FIELD_ALIASES["phone"])
-    message = _pick_contact_field(data, _CONTACT_FIELD_ALIASES["message"])
+    norm_map = {_normalize_field_key(k): v for k, v in data.items()}
+
+    name = _pick_contact_field(data, _CONTACT_FIELD_ALIASES["name"], norm_map)
+    if not name:
+        # Webflow's contact form splits name into "First-name" / "Last-name"
+        # rather than a single "Name" field.
+        first = str(norm_map.get("first name", "")).strip()
+        last = str(norm_map.get("last name", "")).strip()
+        name = f"{first} {last}".strip()
+
+    email = _pick_contact_field(data, _CONTACT_FIELD_ALIASES["email"], norm_map)
+    phone = _pick_contact_field(data, _CONTACT_FIELD_ALIASES["phone"], norm_map)
+    message = _pick_contact_field(data, _CONTACT_FIELD_ALIASES["message"], norm_map)
 
     mapped_keys = {alias for aliases in _CONTACT_FIELD_ALIASES.values() for alias in aliases}
+    mapped_keys |= {"first name", "last name"}
     extra_lines = [
-        f"{k}: {v}" for k, v in data.items()
-        if k.strip().lower() not in mapped_keys and str(v).strip()
+        f"{k.title()}: {v}" for k, v in norm_map.items()
+        if k not in mapped_keys and k not in _CONTACT_IGNORE_FIELDS
+        and v not in (None, "", False, 0)
     ]
 
     note_lines = [f"[Website contact form — {datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}]"]
