@@ -321,9 +321,25 @@ def client_new():
             ),
         )
         client_id = cur.fetchone()["id"]
+        cur = conn.execute(
+            """INSERT INTO commissions
+               (client_id, type, status, description, price_pence, deposit_pence, deadline, created_at, updated_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id""",
+            (
+                client_id,
+                "Other",
+                "Enquiry",
+                "New enquiry — add commission details.",
+                0,
+                0,
+                None,
+                now, now,
+            ),
+        )
+        commission_id = cur.fetchone()["id"]
         conn.commit()
         flash("Client added.", "success")
-        return redirect(url_for("client_detail", client_id=client_id))
+        return redirect(url_for("commission_edit", commission_id=commission_id))
     return render_template("client_form.html", client=None)
 
 
