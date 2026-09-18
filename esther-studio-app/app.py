@@ -327,7 +327,7 @@ def client_new():
                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id""",
             (
                 client_id,
-                "Other",
+                "House Portrait",
                 "Enquiry",
                 "New enquiry — add commission details.",
                 0,
