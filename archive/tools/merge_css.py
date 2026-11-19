@@ -140,36 +140,33 @@ def find_conflicts(rule_lists, context):
 
 
 def merge(pages):
+    """Merge per section: Webflow writes each section as base rules followed by
+    its @media blocks. Base rules are merged with base rules and each breakpoint
+    with the same breakpoint, so a breakpoint can never land before the base
+    rules it overrides."""
     parsed = [parse(t) for t in pages]
-    # outer keys
-    def key(it):
-        return ("R", it[1], it[2]) if it[0] == "R" else ("M", it[1], it[2])
-    outer = ordered_union([[key(it) for it in p] for p in parsed])
-    media_inner = defaultdict(list)
-    for p in parsed:
-        for it in p:
-            if it[0] == "M":
-                media_inner[(it[1], it[2])].append(it[3])
-    conflicts = []
-    # plain rules per segment, for conflict reporting
-    segs = defaultdict(list)
-    for p in parsed:
-        by = defaultdict(list)
-        for it in p:
-            if it[0] == "R":
-                by[it[1]].append(it[2])
-        for s, rules in by.items():
-            segs[s].append(rules)
-    for s, lists in segs.items():
-        conflicts += find_conflicts(lists, f"segment {s}")
-    result = []
-    for k in outer:
-        if k[0] == "R":
-            result.append(("R", k[2]))
-        else:
-            lists = media_inner[(k[1], k[2])]
-            conflicts += find_conflicts(lists, f"{k[2]} (segment {k[1]})")
-            result.append(("M", k[2], ordered_union(lists)))
+    segments = sorted({it[1] for p in parsed for it in p})
+    conflicts, result = [], []
+    for s in segments:
+        base_lists, media_lists, media_order = [], defaultdict(list), []
+        for p in parsed:
+            base_lists.append([it[2] for it in p if it[0] == "R" and it[1] == s])
+            for it in p:
+                if it[0] == "M" and it[1] == s:
+                    if it[2] not in media_order:
+                        media_order.append(it[2])
+                    media_lists[it[2]].append(it[3])
+        base_lists = [b for b in base_lists if b]
+        conflicts += find_conflicts(base_lists, f"section {s}")
+        for r in ordered_union(base_lists):
+            result.append(("R", r))
+        # Webflow's desktop-first breakpoints, largest first; anything else after
+        def bp(q):
+            m = re.search(r"max-width:\s*(\d+)px", q)
+            return (0, -int(m.group(1))) if m and "min-width" not in q else (1, media_order.index(q))
+        for q in sorted(media_order, key=bp):
+            conflicts += find_conflicts(media_lists[q], f"{q} (section {s})")
+            result.append(("M", q, ordered_union(media_lists[q])))
     return result, conflicts, parsed
 
 
