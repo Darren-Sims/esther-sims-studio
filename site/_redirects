@@ -1,0 +1,3 @@
+# Keep old .html and trailing-slash URLs working
+/commissions/  /commissions  301
+/commissions/index.html  /commissions  301
