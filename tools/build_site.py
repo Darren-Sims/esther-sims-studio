@@ -17,6 +17,7 @@ What it does:
               (replaced by /assets/js/portfolio.js).
 """
 import html
+import json
 import re
 import shutil
 import sys
@@ -208,6 +209,30 @@ CONTENT_EDITS = {
     ],
 }
 
+def jsonld_drop_video(data):
+    """Homepage: drop the VideoObject. Its URLs were placeholders, and Search
+    Console won't index a background loop ("Video isn't on a watch page")."""
+    if "@graph" in data:
+        data["@graph"] = [n for n in data["@graph"] if n.get("@type") != "VideoObject"]
+    return data
+
+
+def jsonld_drop_reviews(data):
+    """About: drop the self-published testimonials from the markup. Search Console
+    flagged them as invalid, and Google doesn't show stars for reviews a business
+    publishes about itself. The testimonials still show on the page."""
+    about = data.get("about")
+    if isinstance(about, dict):
+        about.pop("review", None)
+    return data
+
+
+# JSON-LD edits per page: functions that take and return the parsed JSON.
+JSONLD_EDITS = {
+    "index.html": [jsonld_drop_video],
+    "about.html": [jsonld_drop_reviews],
+}
+
 PORTFOLIO_SCRIPT_TAG = '<script src="/assets/js/portfolio.js" defer></script>'
 
 
@@ -295,6 +320,17 @@ def process_page(src_rel: str, out_rel: str, mapping):
         text, n = re.subn(r"<script>\s*\(function \(\) \{\s*var PAGE_SIZE = 9;.*?\}\)\(\);\s*</script>", PORTFOLIO_SCRIPT_TAG, text, flags=re.S)
         if n_before != 1 or n != 1:
             warnings.append(f"portfolio.html: expected 1 filters tag and 1 Load More script, found {n_before} and {n}")
+
+    # 17. JSON-LD edits
+    if src_rel in JSONLD_EDITS:
+        def edit_block(m):
+            data = json.loads(m.group(2))
+            for fn in JSONLD_EDITS[src_rel]:
+                data = fn(data)
+            return m.group(1) + "\n" + json.dumps(data, indent=2, ensure_ascii=False) + "\n" + m.group(3)
+        text, n = re.subn(r'(<script type="application/ld\+json">)(.*?)(</script>)', edit_block, text, flags=re.S)
+        if n != 1:
+            warnings.append(f"{src_rel}: expected 1 JSON-LD block to edit, found {n}")
 
     # 16. No longer built with Webflow
     text = text.replace('<meta content="Webflow" name="generator"/>', "")

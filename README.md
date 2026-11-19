@@ -43,7 +43,7 @@ python3 tools/check_site.py
 - [x] **Forms:** commission form on `/contact` → Formspree (`src/forms.js`); pop-up nav form replaced with an email button + link to `/contact` until the footer redesign.
 - [ ] **Instagram feeds:** two Finsweet Components feeds (home page) depend on Finsweet's Webflow app and a token saved against the Webflow site. They need replacing.
 - [x] **Back-to-top on desktop:** Brave Shields hid `.back-to-top`; renamed to `.scroll-top-btn`.
-- [ ] **Homepage JSON-LD:** the `VideoObject` points at placeholder URLs (`/videos/background-video.mp4`, `/embed/background-video`, `/images/video-thumbnail.jpg`) that don't exist on the live site either. Fix them or remove the block.
+- [x] **Homepage JSON-LD:** placeholder `VideoObject` removed (Search Console: "Video isn't on a watch page"). Also removed the invalid self-published reviews from `/about`'s JSON-LD.
 - [ ] **Per-page assets:** the site still has one CSS file per page (plus `shared.css`) and four `webflow.js` bundles. Webflow builds these per page, so merging them needs testing on the preview.
 - [ ] **Third-party scripts:** Tippy.js and Popper.js v1/v4 load from unpkg on `/commissions`. Self-host or upgrade them.
 - [ ] **Portfolio indexing:** `/portfolio` is `noindex` and left out of `sitemap.xml`, matching the live site. Decide whether to keep that.
