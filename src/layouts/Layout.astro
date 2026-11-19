@@ -9,7 +9,6 @@
  *   path                 URL path, e.g. "/about" (canonical + current nav link)
  *   ogImage              absolute URL of the social-share image
  *   wfPage               Webflow page ID; webflow.js uses it for interactions
- *   pageCss              per-page Webflow stylesheet in /assets/css/
  *   webflowJs            Webflow runtime bundle for this page in /assets/js/
  *   head, end            raw HTML: page-specific head tags, and scripts/elements after the footer
  *   bare                 404 page: no nav/footer
@@ -19,7 +18,7 @@ import navigation from '../components/Navigation.html?raw';
 import footer from '../components/Footer.html?raw';
 
 const {
-  title, description = '', path, ogImage, wfPage, pageCss, webflowJs,
+  title, description = '', path, ogImage, wfPage, webflowJs,
   head = '', end = '', bare = false,
 } = Astro.props;
 
@@ -52,7 +51,7 @@ const markCurrent = (markup) =>
     {canonical && <link rel="canonical" href={canonical} />}
     <link href="/assets/css/shared.css" rel="stylesheet" type="text/css" />
     <link href="/assets/css/theme.css" rel="stylesheet" type="text/css" />
-    {pageCss && <link href={`/assets/css/${pageCss}.css`} rel="stylesheet" type="text/css" />}
+    <link href="/assets/css/site.css" rel="stylesheet" type="text/css" />
     <meta property="og:type" content="website"/>
     <meta content="summary_large_image" name="twitter:card"/>
     <meta content="width=device-width, initial-scale=1" name="viewport"/>
