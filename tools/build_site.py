@@ -186,6 +186,28 @@ def quote_path(p: str) -> str:
     return p.replace("%", "%25").replace(" ", "%20").replace("(", "%28").replace(")", "%29").replace(",", "%2C")
 
 
+# Content edits applied to the mirrored HTML: (old, new) exact strings per page.
+# Each must match exactly once, or the build warns.
+CONTENT_EDITS = {
+    "resources/privacy-policy.html": [
+        # 19 Nov 2026: site moved to Cloudflare Pages, forms to Formspree, Turnstile removed
+        ("Last updated: 10 october, 2026", "Last updated: 19 November 2026"),
+        ("your browser sends your IP address and device details to my website host and to the security check on my contact forms.",
+         "your browser sends your IP address and device details to my website host. If you send the contact form, your message and IP address also go to the service that delivers it to me."),
+        ("<p>My contact forms use Cloudflare Turnstile to check that a real person, not a spam bot, is sending the message. Turnstile looks at technical signals from your browser, such as your IP address, and may use strictly necessary cookies for that check. It doesn&#x27;t track you across other websites.</p>",
+         "<p>My contact form is delivered to me by Formspree, which also checks messages for spam. Formspree only receives what you send through the form, along with your IP address. It doesn&#x27;t set cookies on this website or track you across other websites.</p>"),
+        ('<td class="fs-table_cell-2">Webflow</td><td class="fs-table_cell-2">Hosts my website and receives contact form messages</td>',
+         '<td class="fs-table_cell-2">Cloudflare</td><td class="fs-table_cell-2">Hosts my website</td>'),
+        ('<td class="fs-table_cell-2">Cloudflare</td><td class="fs-table_cell-2">Runs the spam check on my contact forms</td>',
+         '<td class="fs-table_cell-2">Formspree</td><td class="fs-table_cell-2">Receives messages from my contact form, checks them for spam and forwards them to my email</td>'),
+    ],
+    "contact.html": [
+        # The privacy checkbox linked to an old PDF copy of the policy; link the live page instead
+        ('href="/assets/media/6a17c7d771435c1aee69ac60_Esther-Sims-Studio-Privacy-Policy.pdf"',
+         'href="/resources/privacy-policy"'),
+    ],
+}
+
 PORTFOLIO_SCRIPT_TAG = '<script src="/assets/js/portfolio.js" defer></script>'
 
 
@@ -273,6 +295,16 @@ def process_page(src_rel: str, out_rel: str, mapping):
         text, n = re.subn(r"<script>\s*\(function \(\) \{\s*var PAGE_SIZE = 9;.*?\}\)\(\);\s*</script>", PORTFOLIO_SCRIPT_TAG, text, flags=re.S)
         if n_before != 1 or n != 1:
             warnings.append(f"portfolio.html: expected 1 filters tag and 1 Load More script, found {n_before} and {n}")
+
+    # 16. No longer built with Webflow
+    text = text.replace('<meta content="Webflow" name="generator"/>', "")
+
+    # 15. Content edits
+    for old, new in CONTENT_EDITS.get(src_rel, []):
+        n = text.count(old)
+        if n != 1:
+            warnings.append(f"{src_rel}: content edit matched {n} times: {old[:60]}...")
+        text = text.replace(old, new)
 
     # 13. Pop-up nav menu: replace the short Webflow contact form with an email
     #     button + link to the full commission form (until the footer redesign).
