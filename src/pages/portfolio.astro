@@ -1,0 +1,19 @@
+---
+import Layout from '../layouts/Layout.astro';
+import content from '../components/pages/portfolio.html?raw';
+import head from '../components/pages/portfolio.head.html?raw';
+import end from '../components/pages/portfolio.end.html?raw';
+---
+<Layout
+  title={"Custom Paintings by Esther Sims Studio | Derby, UK"}
+  description={"Explore custom ink and watercolour paintings by Esther Sims Studio. View house portraits, nature scenes, people and pet commissions in Derby, UK."}
+  path="/portfolio"
+  ogImage="https://www.esthersimsstudio.co.uk/assets/media/691f85d4870b96ce3f6e7028_esther-open-graph.jpeg"
+  wfPage="6a70cdf66558f16811ab2553"
+  pageCss="page-6a70cdf66558f16811ab2553"
+  webflowJs="webflow-b4ec038b"
+  head={head}
+  end={end}
+>
+  <Fragment set:html={content} />
+</Layout>

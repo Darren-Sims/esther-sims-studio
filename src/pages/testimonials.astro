@@ -1,0 +1,19 @@
+---
+import Layout from '../layouts/Layout.astro';
+import content from '../components/pages/testimonials.html?raw';
+import head from '../components/pages/testimonials.head.html?raw';
+import end from '../components/pages/testimonials.end.html?raw';
+---
+<Layout
+  title={"Client Testimonials | Esther Sims Studio House Portraits"}
+  description={"Read what clients say about Esther Sims Studio's bespoke house portraits. Stunning ink and watercolour paintings that always surpass expectations."}
+  path="/testimonials"
+  ogImage="https://www.esthersimsstudio.co.uk/assets/media/6422d539c22c93658668f5c3_Esther%20Sims%20Studio%20OpenGraph.jpg"
+  wfPage="64bbbf671bed937afd1d6b72"
+  pageCss="page-64bbbf671bed937afd1d6b72"
+  webflowJs="webflow-b4ec038b"
+  head={head}
+  end={end}
+>
+  <Fragment set:html={content} />
+</Layout>

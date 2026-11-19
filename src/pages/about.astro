@@ -1,0 +1,19 @@
+---
+import Layout from '../layouts/Layout.astro';
+import content from '../components/pages/about.html?raw';
+import head from '../components/pages/about.head.html?raw';
+import end from '../components/pages/about.end.html?raw';
+---
+<Layout
+  title={"About Esther Sims | UK House Portrait Artist | Derby"}
+  description={"Meet Esther Sims, a Derby-based artist creating bespoke house portraits and custom artwork. Discover her thoughtful approach to commissioned art."}
+  path="/about"
+  ogImage="https://www.esthersimsstudio.co.uk/assets/media/6422d539c22c93658668f5c3_Esther%20Sims%20Studio%20OpenGraph.jpg"
+  wfPage="64bbbf671bed937afd1d6b6d"
+  pageCss="page-64bbbf671bed937afd1d6b6d"
+  webflowJs="webflow-b1c6f138"
+  head={head}
+  end={end}
+>
+  <Fragment set:html={content} />
+</Layout>

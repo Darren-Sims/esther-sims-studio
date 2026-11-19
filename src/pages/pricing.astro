@@ -1,0 +1,19 @@
+---
+import Layout from '../layouts/Layout.astro';
+import content from '../components/pages/pricing.html?raw';
+import head from '../components/pages/pricing.head.html?raw';
+import end from '../components/pages/pricing.end.html?raw';
+---
+<Layout
+  title={"Bespoke House Portrait Pricing | From £105 | Esther Sims"}
+  description={"Bespoke house portraits from £105 for A5, £145 for 8x10\", £160 for A4. Professional materials, free UK shipping, custom artwork made to order."}
+  path="/pricing"
+  ogImage="https://www.esthersimsstudio.co.uk/assets/media/6422d539c22c93658668f5c3_Esther%20Sims%20Studio%20OpenGraph.jpg"
+  wfPage="6a68a8451e333acdbdda9936"
+  pageCss="page-6a68a8451e333acdbdda9936"
+  webflowJs="webflow-b4ec038b"
+  head={head}
+  end={end}
+>
+  <Fragment set:html={content} />
+</Layout>

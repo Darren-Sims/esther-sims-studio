@@ -1,0 +1,7 @@
+# Keep the pages.dev address and branch previews out of search,
+# even after the same build also serves the custom domain.
+https://:project.pages.dev/*
+  X-Robots-Tag: noindex, nofollow
+
+https://:version.:project.pages.dev/*
+  X-Robots-Tag: noindex, nofollow

@@ -1,0 +1,19 @@
+---
+import Layout from '../layouts/Layout.astro';
+import content from '../components/pages/contact.html?raw';
+import head from '../components/pages/contact.head.html?raw';
+import end from '../components/pages/contact.end.html?raw';
+---
+<Layout
+  title={"Contact Esther Sims Studio | Bespoke House Portraits UK"}
+  description={"Get in touch with Esther Sims Studio to commission your bespoke house portrait. Based in Derby, UK. Share your vision and start your custom artwork today."}
+  path="/contact"
+  ogImage="https://www.esthersimsstudio.co.uk/assets/media/6422d539c22c93658668f5c3_Esther%20Sims%20Studio%20OpenGraph.jpg"
+  wfPage="64bbbf671bed937afd1d6b70"
+  pageCss="page-64bbbf671bed937afd1d6b70"
+  webflowJs="webflow-b4ec038b"
+  head={head}
+  end={end}
+>
+  <Fragment set:html={content} />
+</Layout>

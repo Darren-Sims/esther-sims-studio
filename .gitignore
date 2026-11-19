@@ -1,0 +1,13 @@
+# Dependencies
+node_modules/
+
+# Build output and Astro cache
+dist/
+.astro/
+
+# Environment files
+.env
+.env.*
+
+# macOS
+.DS_Store

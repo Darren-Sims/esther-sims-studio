@@ -1,0 +1,19 @@
+---
+import Layout from '../layouts/Layout.astro';
+import content from '../components/pages/commissions.html?raw';
+import head from '../components/pages/commissions.head.html?raw';
+import end from '../components/pages/commissions.end.html?raw';
+---
+<Layout
+  title={"Commission House Portraits | Esther Sims Studio"}
+  description={"Custom watercolor house portraits on archival paper. Choose straight or organic edge finish. A5 from £105, A4 from £160. Free UK shipping included."}
+  path="/commissions"
+  ogImage="https://www.esthersimsstudio.co.uk/assets/media/6422d539c22c93658668f5c3_Esther%20Sims%20Studio%20OpenGraph.jpg"
+  wfPage="64bbbf671bed937afd1d6b6e"
+  pageCss="page-64bbbf671bed937afd1d6b6e"
+  webflowJs="webflow-de34e9ad"
+  head={head}
+  end={end}
+>
+  <Fragment set:html={content} />
+</Layout>

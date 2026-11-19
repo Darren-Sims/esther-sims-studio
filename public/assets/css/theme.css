@@ -1,0 +1,56 @@
+/*
+ * Esther Sims Studio theme: colours, fonts and type scale.
+ * Change a value here and it changes across the whole site.
+ * (Extracted from the 11 per-page Webflow stylesheets, which each had a copy.)
+ */
+
+@font-face {
+  font-family:Inter variablefont slnt wght;
+  src:url(../media/640ef9233fa34a3d96a81963_Inter-VariableFont_slnt,wght.ttf)format("truetype");
+  font-weight:100 900;
+  font-style:normal;
+  font-display:swap
+}
+@font-face {
+  font-family:Playfairdisplay variablefont wght;
+  src:url(../media/640ef9517577f6020e32e49e_PlayfairDisplay-VariableFont_wght.ttf)format("truetype");
+  font-weight:400 900;
+  font-style:normal;
+  font-display:swap
+}
+
+:root {
+  /* Fonts */
+  --font-heading: "Playfairdisplay variablefont wght", sans-serif;
+  --font-body: "Inter variablefont slnt wght", sans-serif;
+
+  /* Colours */
+  --green-white: #efefe3;
+  --green-black: #344a05;
+  --sage-green: #586b00;
+  --gold-yellow: #c1c100;
+  --button--hover: #344a05e3;
+  --gold-green: #8f8f58;
+  --light-gold: #e5e5ba;
+  --image-overlay: #1222088f;
+  --accessible-components-dark-grey: #9b9b9b;
+  --transparent: #efefef00;
+  --accessible-components-dodger-blue: #1378d1;
+
+  /* Type scale and other values */
+  --text-size-regular: clamp(1.063rem,.938rem + .625vw,1.25rem);
+  --text-size--small: .75rem;
+  --underline: .125rem;
+  --_typography---h3: clamp(1.563rem,1.215rem + 1.739vw,2.441rem);
+  --_typography---line-height--h2: 1.15;
+  --_typography---letter-spacing--h2: .02em;
+  --_typography---h4: clamp(1.25rem,.991rem + 1.295vw,1.953rem);
+  --_typography---line-height--h3: 1.2;
+  --_typography---letter-spacing--h3: -.015em;
+  --text-size--regular: clamp(1.063rem,.938rem + .625vw,1.25rem);
+  --_typography---paragraph: clamp(1.063rem,.938rem + .625vw,1.25rem);
+  --_typography---h2: clamp(1.953rem,1.502rem + 2.254vw,3.052rem);
+  --_typography---h1: clamp(2.441rem,1.844rem + 2.985vw,3.815rem);
+  --_typography---letter-spacing: -.025em;
+  --line-height--h1: 110%;
+}

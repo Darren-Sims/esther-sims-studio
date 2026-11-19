@@ -1,0 +1,18 @@
+---
+import Layout from '../layouts/Layout.astro';
+import content from '../components/pages/not-found.html?raw';
+import head from '../components/pages/not-found.head.html?raw';
+import end from '../components/pages/not-found.end.html?raw';
+---
+<Layout
+  title={"Not Found"}
+  description={""}
+  wfPage="64bbbf671bed937afd1d6b6c"
+  pageCss="page-64bbbf671bed937afd1d6b6c"
+  webflowJs="webflow-b4ec038b"
+  bare
+  head={head}
+  end={end}
+>
+  <Fragment set:html={content} />
+</Layout>

@@ -1,0 +1,19 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import content from '../../components/pages/privacy-policy.html?raw';
+import head from '../../components/pages/privacy-policy.head.html?raw';
+import end from '../../components/pages/privacy-policy.end.html?raw';
+---
+<Layout
+  title={"Privacy Policy | Esther Sims Studio"}
+  description={"Learn how Esther Sims Studio collects, uses, and protects your personal information. Transparent privacy practices for our house portrait commission services."}
+  path="/resources/privacy-policy"
+  ogImage="https://www.esthersimsstudio.co.uk/assets/media/6422d539c22c93658668f5c3_Esther%20Sims%20Studio%20OpenGraph.jpg"
+  wfPage="6a17134bd851ef2bd479b3d8"
+  pageCss="page-6a17134bd851ef2bd479b3d8"
+  webflowJs="webflow-b4ec038b"
+  head={head}
+  end={end}
+>
+  <Fragment set:html={content} />
+</Layout>

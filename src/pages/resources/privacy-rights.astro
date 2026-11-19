@@ -1,0 +1,18 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import content from '../../components/pages/privacy-rights.html?raw';
+import head from '../../components/pages/privacy-rights.head.html?raw';
+import end from '../../components/pages/privacy-rights.end.html?raw';
+---
+<Layout
+  title={"Privacy Rights | Esther Sims Studio"}
+  description={"Learn about your privacy rights under EU GDPR, UK GDPR, and US state privacy laws. Understand how to access, correct, delete, or port your personal data."}
+  path="/resources/privacy-rights"
+  wfPage="6a3ee2abd1b4b22d17617830"
+  pageCss="page-6a3ee2abd1b4b22d17617830"
+  webflowJs="webflow-b4ec038b"
+  head={head}
+  end={end}
+>
+  <Fragment set:html={content} />
+</Layout>

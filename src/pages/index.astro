@@ -1,0 +1,19 @@
+---
+import Layout from '../layouts/Layout.astro';
+import content from '../components/pages/home.html?raw';
+import head from '../components/pages/home.head.html?raw';
+import end from '../components/pages/home.end.html?raw';
+---
+<Layout
+  title={"Custom House Portraits & Watercolour Art | Esther Sims Studio"}
+  description={"Bespoke ink & watercolour house portraits from £105. Unique, personalised artwork created from your photos. Based in Derby, UK. Commission your painting today."}
+  path="/"
+  ogImage="https://www.esthersimsstudio.co.uk/assets/media/6422d539c22c93658668f5c3_Esther%20Sims%20Studio%20OpenGraph.jpg"
+  wfPage="64bbbf671bed937afd1d6b6a"
+  pageCss="page-64bbbf671bed937afd1d6b6a"
+  webflowJs="webflow-a5b2af32"
+  head={head}
+  end={end}
+>
+  <Fragment set:html={content} />
+</Layout>

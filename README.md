@@ -1,49 +1,73 @@
 # Esther Sims Studio website
 
-Static version of [esthersimsstudio.co.uk](https://www.esthersimsstudio.co.uk), moved off Webflow and intended for Cloudflare Pages.
+Astro static site for [esthersimsstudio.co.uk](https://www.esthersimsstudio.co.uk), hosted on Cloudflare Pages. Rebuilt from the Webflow site in November 2026.
 
-## Layout
+## Local development
 
-| Path | What it is |
+Use the Node version in `.node-version` (22). On a new checkout run `npm install`, then:
+
+- `npm run dev` — local dev server with live reload
+- `npm run build` — build the static site into `dist/`
+- `npm run preview` — serve the built site locally
+
+## Where things live
+
+| To change… | Edit |
 |---|---|
-| `site/` | **The deployable site.** This is the Cloudflare Pages output folder. Generated; don't edit by hand. |
-| `mirror/` | Raw `wget` mirror of the live Webflow site (19 Nov 2026). Never edited. |
-| `src/` | Hand-written source files copied into `site/` (e.g. `portfolio.js`). |
-| `tools/build_site.py` | Rebuilds `site/` from `mirror/` + `src/`. |
-| `tools/check_site.py` | Checks that every local link in `site/` resolves, and lists external hosts. |
-| `portfolio-filters.js` | Old filter script, still loaded by the live Webflow site through jsDelivr. Keep it until the switch to Cloudflare Pages, then delete it. |
+| **Colours, fonts, type scale** | `public/assets/css/theme.css`. One place for the whole site: `--green-black`, `--sage-green`, `--gold-yellow`…, `--font-heading` / `--font-body`, and the h1–h4/paragraph sizes. |
+| **Navigation** (pop-up menu) | `src/components/Navigation.html` |
+| **Footer** | `src/components/Footer.html` |
+| **A page's content** | `src/components/pages/<page>.html`, e.g. `home.html`, `about.html`. Plain HTML using the Webflow class names. |
+| **A page's title, description, share image** | the props in `src/pages/<page>.astro` |
+| **A page's structured data / extra head tags** | `src/components/pages/<page>.head.html` |
+| **Scripts or elements after the footer** | `src/components/pages/<page>.end.html` |
+| **Head tags, scripts and wrappers on every page** | `src/layouts/Layout.astro` |
+| **Images, video, fonts, PDFs** | `public/assets/media/`, referenced as `/assets/media/<file>` |
+| **Site scripts** | `public/assets/js/`: `portfolio.js` (filters, Load more, back-to-top) and `forms.js` (Formspree) |
+| **Redirects / headers** | `public/_redirects`, `public/_headers` |
 
-## Rebuild
+### Spacing
 
-```bash
-python3 tools/build_site.py
-python3 tools/check_site.py
-```
+Spacing comes from the Webflow utility classes in the HTML, such as `padding-global`, `padding-section-large`, `margin-bottom margin-small` and `max-width-large`. To change one element, change its classes in the page's `.html`. To change a spacing step everywhere, edit that class in the CSS.
 
-## Cloudflare Pages settings
+The CSS is still Webflow's: `shared.css` plus one minified `page-<id>.css` per page. Each page file repeats most of the site's styles, so a site-wide CSS change currently has to go in every page file. Merging them into one readable stylesheet is the next clean-up step (see To do).
 
-- Build command: *(none)*
-- Build output directory: `site`
-- Cloudflare Pages serves `/about` from `about.html` and uses `404.html` for unknown paths.
+### Adding an image
 
-## What the build changes
+1. Save it to `public/assets/media/`. Keep files reasonably small: export at about 2× the largest size it will show, as WebP or AVIF.
+2. Reference it in the page HTML: `<img src="/assets/media/my-image.webp" alt="…" loading="lazy" width="…" height="…">`.
 
-- Pages sit at the root with the same URLs as the live site. The five `contact?size=…` copies that wget saved are dropped, because one `contact.html` handles every query string.
-- Assets are moved to `assets/css`, `assets/js` and `assets/media`. Internal links become clean root paths (`/about`, `/contact?size=A5&price=105`).
-- Canonical, `og:image` and JSON-LD URLs become absolute on the real domain.
-- Fixed:
-  - the homepage background-image URLs wget mangled
-  - the `webflow.io` links in the `/commissions` tooltips
-  - the preconnect to Webflow's CDN
-  - SRI hashes on files that are now local
-- Portfolio: `assets/js/portfolio.js` replaces both the jsDelivr filters script and the inline Load More script. One render step filters first, then pages through the results, which fixes the clash between the two. Back-to-top now checks on scroll and resize, with a fallback for short pages.
+Astro's automatic image optimisation (`<Image />` from `astro:assets`) needs the section to be an `.astro` component rather than a raw `.html` file. Convert a section when you want that.
 
-## Still to do
+### Current page in the nav
 
-- [x] **Forms:** commission form on `/contact` → Formspree (`src/forms.js`); pop-up nav form replaced with an email button + link to `/contact` until the footer redesign.
-- [ ] **Instagram feeds:** two Finsweet Components feeds (home page) depend on Finsweet's Webflow app and a token saved against the Webflow site. They need replacing.
-- [x] **Back-to-top on desktop:** Brave Shields hid `.back-to-top`; renamed to `.scroll-top-btn`.
-- [x] **Homepage JSON-LD:** placeholder `VideoObject` removed (Search Console: "Video isn't on a watch page"). Also removed the invalid self-published reviews from `/about`'s JSON-LD.
-- [ ] **Per-page assets:** the site still has one CSS file per page (plus `shared.css`) and four `webflow.js` bundles. Webflow builds these per page, so merging them needs testing on the preview.
-- [ ] **Third-party scripts:** Tippy.js and Popper.js v1/v4 load from unpkg on `/commissions`. Self-host or upgrade them.
-- [ ] **Portfolio indexing:** `/portfolio` is `noindex` and left out of `sitemap.xml`, matching the live site. Decide whether to keep that.
+`Layout.astro` adds Webflow's `w--current` class and `aria-current="page"` to any nav or footer link whose `href` matches the page's `path` prop. Don't hard-code them in the HTML.
+
+## Webflow runtime
+
+The pages still load jQuery and Webflow's `webflow.js` (`public/assets/js/webflow-*.js` plus its `webflow.achunk.*.js` chunks). They power the nav menu, sliders and interactions, which are tied to each page's `wfPage` ID. Keep them until those features are rewritten.
+
+## Cloudflare Pages
+
+- Framework preset: **Astro**
+- Build command: `npm run build`
+- Build output directory: `dist`
+- Node version comes from `.node-version`.
+- `public/_headers` keeps the `pages.dev` address and branch previews out of search. The custom domain is indexable.
+
+Every branch gets its own preview URL. Make changes on a branch, check the preview, then merge to `main` to go live.
+
+## Archive
+
+`archive/` holds the migration record: the raw `wget` mirror of the Webflow site (`archive/mirror/`) and the scripts that turned it into this project (`archive/tools/`). Nothing in the build uses it.
+
+`portfolio-filters.js` at the repo root is still loaded by the live Webflow site through jsDelivr. Delete it after the domain switch.
+
+## To do
+
+- [ ] **Instagram feed → Behold:** replace the two Finsweet feeds on the homepage with a Behold JSON feed.
+- [ ] **Merge the per-page CSS** into one readable stylesheet, checking each page on a branch preview.
+- [ ] **`/about`:** remove the Webflow debug style that outlines `href="#"` links in yellow (`src/components/pages/about.end.html`).
+- [ ] **Self-host or upgrade** Tippy.js v4 and Popper.js v1 on `/commissions` (loaded from unpkg).
+- [ ] **Privacy policy:** add Site Pulse if it collects personal data or sets cookies; add Behold when the feed goes live.
+- [ ] **After switch-over:** "Validate fix" in Search Console for the video and review-snippet issues; cancel the Webflow site plan.
