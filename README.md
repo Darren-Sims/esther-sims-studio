@@ -26,11 +26,21 @@ Use the Node version in `.node-version` (22). On a new checkout run `npm install
 | **Site scripts** | `public/assets/js/`: `portfolio.js` (filters, Load more, back-to-top) and `forms.js` (Formspree) |
 | **Redirects / headers** | `public/_redirects`, `public/_headers` |
 
+### Styles
+
+Three stylesheets load on every page, in this order:
+
+- `public/assets/css/shared.css`: Webflow's base styles (normalize, nav, sliders, forms, tabs). Rarely needs editing.
+- `public/assets/css/theme.css`: colours, fonts and the type scale as variables.
+- `public/assets/css/site.css`: all the site's own styles, readable, one rule per block. Breakpoints come after the base rules in each section: 991px (tablet), 767px (mobile landscape), 479px (mobile). Webflow's styles are desktop-first, so a breakpoint rule overrides the desktop one below that width.
+
+`site.css` was merged from Webflow's 11 per-page stylesheets (`archive/tools/merge_css.py`). Before the old files were removed, every element on all 11 pages was checked at 1280, 900, 700 and 400px wide, and its computed style matched the original exactly.
+
 ### Spacing
 
-Spacing comes from the Webflow utility classes in the HTML, such as `padding-global`, `padding-section-large`, `margin-bottom margin-small` and `max-width-large`. To change one element, change its classes in the page's `.html`. To change a spacing step everywhere, edit that class in the CSS.
+Spacing comes from the Webflow utility classes in the HTML, such as `padding-global`, `padding-section-large`, `margin-bottom margin-small` and `max-width-large`. To change one element, change its classes in the page's `.html`. To change a spacing step everywhere, edit that class in `site.css`. Search for `.padding-section-large {`, for example.
 
-The CSS is still Webflow's: `shared.css` plus one minified `page-<id>.css` per page. Each page file repeats most of the site's styles, so a site-wide CSS change currently has to go in every page file. Merging them into one readable stylesheet is the next clean-up step (see To do).
+Some headings in `site.css` still use fixed sizes (e.g. `h1 { font-size: 4.375rem }`) rather than the type-scale variables in `theme.css`. Switch them to the variables if you want the whole scale controlled from the theme.
 
 ### Adding an image
 
@@ -66,8 +76,6 @@ Every branch gets its own preview URL. Make changes on a branch, check the previ
 ## To do
 
 - [ ] **Instagram feed → Behold:** replace the two Finsweet feeds on the homepage with a Behold JSON feed.
-- [ ] **Merge the per-page CSS** into one readable stylesheet, checking each page on a branch preview.
-- [ ] **`/about`:** remove the Webflow debug style that outlines `href="#"` links in yellow (`src/components/pages/about.end.html`).
 - [ ] **Self-host or upgrade** Tippy.js v4 and Popper.js v1 on `/commissions` (loaded from unpkg).
 - [ ] **Privacy policy:** add Site Pulse if it collects personal data or sets cookies; add Behold when the feed goes live.
 - [ ] **After switch-over:** "Validate fix" in Search Console for the video and review-snippet issues; cancel the Webflow site plan.
