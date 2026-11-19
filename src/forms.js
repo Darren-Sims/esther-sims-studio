@@ -52,6 +52,10 @@
             // success block appears. Webflow also leaves the (hidden) form filled.
             form.style.display = "none";
             if (done) done.style.display = "block";
+            // Bring the "Thank You" heading and message into view.
+            var reduceMotion =
+              window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+            window.scrollTo({ top: 0, behavior: reduceMotion ? "auto" : "smooth" });
           })
           .catch(function (err) {
             if (window.console) console.error(err);
