@@ -40,9 +40,9 @@ python3 tools/check_site.py
 
 ## Still to do
 
-- [ ] **Forms:** the footer contact form (every page) and the commission form (`/contact`) still use Webflow's form handling, which won't work off Webflow. They need replacing with Tally or a Pages Function, and the custom script on `/contact` needs adapting (it depends on `.w-form` / `.w-form-done`).
+- [x] **Forms:** commission form on `/contact` → Formspree (`src/forms.js`); pop-up nav form replaced with an email button + link to `/contact` until the footer redesign.
 - [ ] **Instagram feeds:** two Finsweet Components feeds (home page) depend on Finsweet's Webflow app and a token saved against the Webflow site. They need replacing.
-- [ ] **Back-to-top on desktop:** works in Chromium at 820px and 1440px (tested 19 Nov), but is missing in Darren's Brave on desktop. Likely suspect: Brave's ad/annoyance filter lists hiding `.back-to-top`. Test with Shields down; if that's it, rename the class (e.g. `.scroll-top-btn`).
+- [x] **Back-to-top on desktop:** Brave Shields hid `.back-to-top`; renamed to `.scroll-top-btn`.
 - [ ] **Homepage JSON-LD:** the `VideoObject` points at placeholder URLs (`/videos/background-video.mp4`, `/embed/background-video`, `/images/video-thumbnail.jpg`) that don't exist on the live site either. Fix them or remove the block.
 - [ ] **Per-page assets:** the site still has one CSS file per page (plus `shared.css`) and four `webflow.js` bundles. Webflow builds these per page, so merging them needs testing on the preview.
 - [ ] **Third-party scripts:** Tippy.js and Popper.js v1/v4 load from unpkg on `/commissions`. Self-host or upgrade them.

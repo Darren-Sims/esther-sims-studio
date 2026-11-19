@@ -28,6 +28,8 @@ MIRROR = ROOT / "mirror"
 SITE = ROOT / "site"
 DOMAIN = "https://www.esthersimsstudio.co.uk"
 WEBFLOW_SITE_ID = "63ee391d6609d63fbc92b869"
+FORMSPREE_COMMISSION = "https://formspree.io/f/xoedwopz"
+CONTACT_EMAIL = "esthersimsstudio@gmail.com"
 CDN = "cdn.prod.website-files.com"
 CLOUDFRONT = "d3e54v103j8qbb.cloudfront.net"
 PAGES_DIR = MIRROR / "www.esthersimsstudio.co.uk"
@@ -272,6 +274,34 @@ def process_page(src_rel: str, out_rel: str, mapping):
         if n_before != 1 or n != 1:
             warnings.append(f"portfolio.html: expected 1 filters tag and 1 Load More script, found {n_before} and {n}")
 
+    # 13. Pop-up nav menu: replace the short Webflow contact form with an email
+    #     button + link to the full commission form (until the footer redesign).
+    nav_cta = (
+        '<div class="nav_form-wrapper">'
+        f'<a href="mailto:{CONTACT_EMAIL}" class="button w-button">Email me</a>'
+        '<div style="margin-top:1rem"><a href="/contact">Or fill in the commission form</a></div>'
+        "</div>"
+    )
+    text, n = re.subn(
+        r'<div class="nav_form-wrapper w-form">.*?<div class="error-text">[^<]*</div></div></div></div>',
+        nav_cta, text, flags=re.S,
+    )
+    if n != (0 if src_rel == "404.html" else 1):
+        warnings.append(f"{src_rel}: expected 1 nav form, replaced {n}")
+
+    # 14. Commission form on /contact -> Formspree (handled by /assets/js/forms.js)
+    if src_rel == "contact.html":
+        def form_tag(m):
+            tag = m.group(0)
+            tag = re.sub(r'\s+data-turnstile-sitekey="[^"]*"', "", tag)  # Webflow's Turnstile key
+            tag = tag.replace('method="get"', f'action="{FORMSPREE_COMMISSION}" method="post" data-formspree=""')
+            honeypot = '<input type="text" name="_gotcha" tabindex="-1" autocomplete="off" aria-hidden="true" style="display:none"/>'
+            return tag + honeypot
+        text, n = re.subn(r'<form id="wf-form-Contact-Form"[^>]*>', form_tag, text)
+        text = text.replace("</body>", '<script src="/assets/js/forms.js" defer></script></body>', 1)
+        if n != 1:
+            warnings.append(f"contact.html: expected 1 commission form, found {n}")
+
     # 12. Ad blockers' "annoyance" lists (e.g. Brave Shields) hide anything called
     #     back-to-top, so give the button neutral names.
     text = text.replace("data-back-to-top", "data-scroll-top").replace("back-to-top", "scroll-top-btn")
@@ -299,6 +329,7 @@ def write_extras():
     )
     src = ROOT / "src" / "portfolio.js"
     shutil.copy2(src, SITE / "assets/js/portfolio.js")
+    shutil.copy2(ROOT / "src" / "forms.js", SITE / "assets/js/forms.js")
 
 
 def main():
