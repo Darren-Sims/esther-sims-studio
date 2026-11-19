@@ -200,7 +200,7 @@
 
   // ---------------------------------------------------------------- back to top
   function initBackToTop() {
-    var topBtn = document.querySelector('[data-back-to-top="true"]');
+    var topBtn = document.querySelector('[data-scroll-top="true"]');
     if (!topBtn) return;
 
     topBtn.addEventListener("click", function (event) {

@@ -106,6 +106,7 @@ def fix_css(mapping):
             return f"url({q}../media/{url.rsplit('/', 1)[-1]}{q})"
 
         text = re.sub(r"url\((['\"]?)([^)'\"]+)\1\)", repl, text)
+        text = text.replace(".back-to-top", ".scroll-top-btn")  # see step 12 in process_page
         css.write_text(text, encoding="utf-8")
 
 
@@ -162,6 +163,9 @@ def rewrite_url(raw: str, page_rel: str, mapping, absolute=False) -> str:
         target_rel = path[len("/www.esthersimsstudio.co.uk/"):]
         if joined.query:  # unlikely; wget folds queries into names
             target_rel += "?" + joined.query
+        # Webflow writes href="#" as a link to the page itself plus an empty fragment
+        if url.endswith("#") and not joined.fragment and target_rel == page_rel:
+            return "#"
         clean = resolve_internal(target_rel, frag)
         if clean is None:
             warnings.append(f"{page_rel}: unknown internal link {url}")
@@ -267,6 +271,10 @@ def process_page(src_rel: str, out_rel: str, mapping):
         text, n = re.subn(r"<script>\s*\(function \(\) \{\s*var PAGE_SIZE = 9;.*?\}\)\(\);\s*</script>", PORTFOLIO_SCRIPT_TAG, text, flags=re.S)
         if n_before != 1 or n != 1:
             warnings.append(f"portfolio.html: expected 1 filters tag and 1 Load More script, found {n_before} and {n}")
+
+    # 12. Ad blockers' "annoyance" lists (e.g. Brave Shields) hide anything called
+    #     back-to-top, so give the button neutral names.
+    text = text.replace("data-back-to-top", "data-scroll-top").replace("back-to-top", "scroll-top-btn")
 
     out = SITE / out_rel
     out.parent.mkdir(parents=True, exist_ok=True)
