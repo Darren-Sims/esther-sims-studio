@@ -301,6 +301,12 @@ def process_page(src_rel: str, out_rel: str, mapping):
         text = text.replace("</body>", '<script src="/assets/js/forms.js" defer></script></body>', 1)
         if n != 1:
             warnings.append(f"contact.html: expected 1 commission form, found {n}")
+        # The page script appended its hidden Enquiry-Source input to the .w-form
+        # wrapper, outside <form>, so it was never submitted. Put it inside the form.
+        text, n = re.subn(r"formBlock\.appendChild\(sourceInput\);",
+                          "(formBlock.querySelector('form') || formBlock).appendChild(sourceInput);", text)
+        if n != 1:
+            warnings.append(f"contact.html: expected 1 Enquiry-Source append, found {n}")
 
     # 12. Ad blockers' "annoyance" lists (e.g. Brave Shields) hide anything called
     #     back-to-top, so give the button neutral names.

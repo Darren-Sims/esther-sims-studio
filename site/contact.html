@@ -420,7 +420,7 @@ margin: 0rem !important;
             sourceInput.type = 'hidden';
             sourceInput.name = 'Enquiry-Source';
             sourceInput.value = from;
-            formBlock.appendChild(sourceInput);
+            (formBlock.querySelector('form') || formBlock).appendChild(sourceInput);
           }
         }
 
